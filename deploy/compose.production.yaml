@@ -1,0 +1,50 @@
+services:
+  api:
+    image: ${API_IMAGE:?Set immutable API image tag}
+    restart: unless-stopped
+    env_file: ['.env.production']
+    environment:
+      CERTIFICATE_FONT_PATH: /app/apps/api/assets/NotoSansTC-Regular.otf
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [internal]
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+  worker:
+    image: ${API_IMAGE:?Set immutable API image tag}
+    command: ['node', 'dist/worker.js']
+    restart: unless-stopped
+    env_file: ['.env.production']
+    environment:
+      CERTIFICATE_FONT_PATH: /app/apps/api/assets/NotoSansTC-Regular.otf
+    networks: [internal]
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+  web:
+    image: ${WEB_IMAGE:?Set immutable web image tag}
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Set domain name}
+      ACME_EMAIL: ${ACME_EMAIL:?Set certificate contact email}
+      S3_ORIGIN: ${S3_ORIGIN:?Set Spaces HTTPS origin}
+    ports: ['80:80', '443:443']
+    volumes: ['caddy-data:/data', 'caddy-config:/config']
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [internal]
+volumes:
+  caddy-data:
+  caddy-config:
+networks:
+  internal:

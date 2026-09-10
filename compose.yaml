@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: pt_academy
+      MYSQL_USER: pt
+      MYSQL_PASSWORD: pt_local_only
+      MYSQL_ROOT_PASSWORD: local_development_only
+    ports: ["127.0.0.1:3306:3306"]
+    volumes: ["mysql-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  mysql-data:

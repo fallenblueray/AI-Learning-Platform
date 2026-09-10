@@ -1,0 +1,29 @@
+{
+  "name": "pt-ai-academy",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -k \"npm run dev -w @pt/api\" \"npm run dev -w @pt/web\"",
+    "build": "npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test -w @pt/api",
+    "test:integration": "npm run test:integration -w @pt/api",
+    "db:migrate": "npm run migrate -w @pt/api",
+    "db:seed": "npm run seed -w @pt/api",
+    "test:e2e": "playwright test",
+    "format": "prettier --write apps tests docs README.md package.json playwright.config.ts .github deploy/*.yaml"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "concurrently": "^9.2.1",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

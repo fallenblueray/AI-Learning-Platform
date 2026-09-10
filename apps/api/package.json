@@ -1,0 +1,52 @@
+{
+  "name": "@pt/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/server.js",
+    "worker": "tsx src/worker.ts",
+    "migrate": "tsx src/database/migrate.ts",
+    "seed": "tsx src/database/seed.ts",
+    "admin": "tsx src/database/create-admin.ts",
+    "test": "tsx --test test/unit.test.ts",
+    "test:integration": "tsx --test --test-concurrency=1 test/integration.test.ts",
+    "demo-user": "tsx src/database/create-demo.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.922.0",
+    "@aws-sdk/s3-request-presigner": "^3.922.0",
+    "bcryptjs": "^3.0.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.3",
+    "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "sequelize": "^6.37.7",
+    "stripe": "^19.1.0",
+    "typedi": "^0.10.0",
+    "winston": "^3.18.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.10.0",
+    "@types/pdfkit": "^0.17.3",
+    "@types/qrcode": "^1.5.5",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.6"
+  }
+}

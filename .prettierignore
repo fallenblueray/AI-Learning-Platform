@@ -1,0 +1,11 @@
+node_modules
+dist
+.tools
+.local
+package-lock.json
+*.sql
+*.tf
+*.tfvars
+test-results
+playwright-report
+apps/api/assets
