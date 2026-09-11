@@ -82,7 +82,18 @@ export const errors: ErrorRequestHandler = (error, req, res, _next) => {
           ? 400
           : 500;
   const code = error instanceof HttpException ? error.code : 'REQUEST_FAILED';
-  logger.log(status >= 500 ? 'error' : 'warn', 'request_failed', { request_id: req.requestId, status, code });
+  logger.log(status >= 500 ? 'error' : 'warn', 'request_failed', {
+    request_id: req.requestId,
+    status,
+    code,
+    ...(status >= 500
+      ? {
+          error_type: error instanceof Error ? error.name : typeof error,
+          system_code:
+            typeof error === 'object' && error !== null && 'code' in error ? String((error as { code: unknown }).code) : undefined,
+        }
+      : {}),
+  });
   res.status(status).json({
     error: {
       code,

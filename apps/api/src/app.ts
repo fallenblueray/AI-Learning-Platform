@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import Container from 'typedi';
+import fs from 'node:fs/promises';
 import { env } from './config/env.config';
 import { sequelize } from './database/connection';
 import { csrf, errors, identify } from './middlewares/http';
@@ -67,7 +68,14 @@ export function createApp() {
       requireThat(false, 403, 'INVALID_TOKEN', '下載連結已過期');
     }
     requireThat(claim.kind === 'asset', 403, 'INVALID_TOKEN', '下載連結無效');
-    res.sendFile(Container.get(StorageService).localPath(claim.key));
+    const key = String(claim.key);
+    const file = Container.get(StorageService).localPath(key);
+    if (key.startsWith('certificates/')) {
+      const pdf = await fs.readFile(file);
+      res.attachment('certificate.pdf').type('application/pdf').send(pdf);
+      return;
+    }
+    res.sendFile(file);
   });
   app.use('/api/v1', csrf);
   app.use('/api/v1/auth', authRoutes());

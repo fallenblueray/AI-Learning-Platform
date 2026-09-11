@@ -89,6 +89,7 @@ E2E_EMAIL=learner@example.org E2E_PASSWORD='<密碼>' npm run test:e2e
 - [後端架構與決策](docs/architecture.md)
 - [雲端部署及營運手冊](docs/operations.md)
 - [本次驗收紀錄及未完成的外部驗收](docs/verification.md)
+- [下一階段：雲端試行環境](docs/next-step.md)
 
 ## 首版邊界
 

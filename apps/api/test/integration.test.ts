@@ -151,6 +151,14 @@ test('exam-only completion is idempotent and private answers never reach learnin
   assert.equal((await as.verify(certificate.id)).name, '陳**');
   await Container.get(WorkerService).certificate(certificate.id);
   assert.ok((await certificate.reload()).pdf_key);
+  const ownerCookie = await cookie(u.id);
+  const download = await request(app).get(`/api/v1/certificates/${certificate.id}/download`).set('Cookie', ownerCookie);
+  assert.equal(download.status, 200);
+  const pdf = await request(app).get(download.body.url);
+  assert.equal(pdf.status, 200);
+  assert.match(pdf.headers['content-type'], /^application\/pdf/);
+  assert.equal(pdf.headers['content-disposition'], 'attachment; filename="certificate.pdf"');
+  assert.ok(Buffer.isBuffer(pdf.body) && pdf.body.subarray(0, 5).toString() === '%PDF-');
   await as.revoke(u.id, certificate.id, '測試撤銷');
   assert.equal((await as.verify(certificate.id)).status, 'revoked');
   await as.submit(u.id, e.id, answers);
