@@ -134,7 +134,7 @@ export class WorkerService {
         : payload.template === 'reset'
           ? '重設密碼'
           : '你的完成證書已準備好';
-    const html = `<div style="font-family:sans-serif"><h2>${title}</h2><p>${escapeHtml(String(payload.name))}，你好！</p><p><a href="${escapeHtml(String(payload.url))}">${title}</a></p><p>知行 AI · 醫護學習平台</p></div>`;
+    const html = `<div style="font-family:sans-serif"><h2>${title}</h2><p>${escapeHtml(String(payload.name))}，你好！</p><p><a href="${escapeHtml(String(payload.url))}">${title}</a></p><p>創科學苑 · Innovate Academy</p></div>`;
     if (!env.RESEND_API_KEY) {
       if (env.NODE_ENV === 'production') throw new Error('mail_unconfigured');
       const dir = path.resolve(env.LOCAL_STORAGE_PATH, '../mail');

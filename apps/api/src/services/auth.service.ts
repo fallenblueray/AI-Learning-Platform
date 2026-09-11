@@ -181,7 +181,7 @@ export class AuthService {
     });
     return {
       secret,
-      uri: `otpauth://totp/PTAcademy:${userId}?secret=${secret}&issuer=PTAcademy&algorithm=SHA1&digits=6&period=30`,
+      uri: `otpauth://totp/InnovateAcademy:${userId}?secret=${secret}&issuer=InnovateAcademy&algorithm=SHA1&digits=6&period=30`,
     };
   }
   async confirmTotp(userId: string, code: string) {

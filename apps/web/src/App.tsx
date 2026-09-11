@@ -147,8 +147,8 @@ export function App() {
             <Leaf size={23} />
           </span>
           <span>
-            知行 <b>AI</b>
-            <small>HEALTHCARE ACADEMY</small>
+            創科學苑
+            <small>INNOVATE ACADEMY</small>
           </span>
         </a>
         <div className="workspace-label">你的專業成長空間</div>
@@ -524,7 +524,7 @@ export function App() {
           {user && page === 'admin' && <AdminPage user={user} notify={notify} onChanged={() => void reload()} />}
         </main>
         <footer className="main-footer">
-          <span>知行 AI · 為專業成長，留一點空間。</span>
+          <span>創科學苑 · Innovate Academy</span>
           <span>香港醫護學習平台 {config.demo_mode && ' · 試行版本'}</span>
         </footer>
       </div>
@@ -890,7 +890,7 @@ function VerifyPage({ id }: { id: string }) {
         <span className="brand-mark">
           <Leaf />
         </span>
-        知行 AI
+        創科學苑 <small>Innovate Academy</small>
       </a>
       <div className="panel verify-card">
         <ShieldCheck size={44} />

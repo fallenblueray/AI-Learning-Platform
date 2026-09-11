@@ -277,7 +277,7 @@ paths['/webhooks/stripe'] = {
 export const openapi = {
   openapi: '3.1.0',
   info: {
-    title: '知行 AI 學習平台 API',
+    title: '創科學苑 / Innovate Academy API',
     version: '0.1.0',
     description: '所有金額為港幣分；點數為整數。課程合格只取決於測驗。正式 CPD 功能未啟用。',
   },

@@ -1,4 +1,4 @@
-# 知行 AI · 香港醫護學習平台
+# 創科學苑 / Innovate Academy · 香港醫護 AI 學習平台
 
 供香港物理治療師學習使用 AI 的繁體中文 MVP。React / Vite 前端、Express / TypeScript / Sequelize 後端、MySQL 資料庫；課程影片、圖片、講義及證書使用私有物件儲存。
 

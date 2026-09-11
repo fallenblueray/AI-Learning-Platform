@@ -12,7 +12,7 @@ export const env = z
     DB_SSL: bool.default(false),
     JWT_SECRET: z.string().min(32),
     ENCRYPTION_KEY: z.string().min(32),
-    ISSUER_NAME: z.string().min(1).max(255).default('知行 AI 學習平台（示範）'),
+    ISSUER_NAME: z.string().min(1).max(255).default('創科學苑 / Innovate Academy（示範）'),
     DEMO_MODE: bool.default(false),
     LIVE_PAYMENTS_ENABLED: bool.default(false),
     STRIPE_SECRET_KEY: z.string().default(''),
