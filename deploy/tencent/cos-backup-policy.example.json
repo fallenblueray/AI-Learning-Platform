@@ -1,0 +1,32 @@
+{
+  "version": "2.0",
+  "statement": [
+    {
+      "effect": "allow",
+      "action": [
+        "name/cos:HeadBucket",
+        "name/cos:GetBucket"
+      ],
+      "resource": [
+        "qcs::cos:ap-singapore:uid/REPLACE_APPID:REPLACE_BACKUP_BUCKET-REPLACE_APPID"
+      ]
+    },
+    {
+      "effect": "allow",
+      "action": [
+        "name/cos:GetObject",
+        "name/cos:HeadObject",
+        "name/cos:PutObject",
+        "name/cos:InitiateMultipartUpload",
+        "name/cos:UploadPart",
+        "name/cos:CompleteMultipartUpload",
+        "name/cos:AbortMultipartUpload",
+        "name/cos:ListMultipartUploads",
+        "name/cos:ListParts"
+      ],
+      "resource": [
+        "qcs::cos:ap-singapore:uid/REPLACE_APPID:REPLACE_BACKUP_BUCKET-REPLACE_APPID/mysql/daily/*"
+      ]
+    }
+  ]
+}

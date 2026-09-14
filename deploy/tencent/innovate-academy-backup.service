@@ -1,0 +1,11 @@
+[Unit]
+Description=Innovate Academy MySQL backup to Tencent COS
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/innovate-academy/deploy/tencent
+ExecStart=/opt/innovate-academy/deploy/tencent/backup-to-cos.sh
+User=root
+Nice=10

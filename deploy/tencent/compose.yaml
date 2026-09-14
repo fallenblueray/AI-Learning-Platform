@@ -1,0 +1,88 @@
+name: innovate-academy
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    env_file: [.env.production]
+    environment:
+      MYSQL_DATABASE: pt_academy
+      MYSQL_USER: pt_app
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?Set MYSQL_APP_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --innodb-buffer-pool-size=512M
+      - --max-connections=60
+    volumes: [mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks: [database]
+    logging: &logging
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+
+  api:
+    build: { context: ../.., target: api }
+    restart: unless-stopped
+    env_file: [.env.production]
+    environment:
+      CERTIFICATE_FONT_PATH: /app/apps/api/assets/NotoSansTC-Regular.otf
+    depends_on:
+      mysql: { condition: service_healthy }
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks: [database, application]
+    logging: *logging
+
+  worker:
+    build: { context: ../.., target: api }
+    command: ['node', 'dist/worker.js']
+    restart: unless-stopped
+    env_file: [.env.production]
+    environment:
+      CERTIFICATE_FONT_PATH: /app/apps/api/assets/NotoSansTC-Regular.otf
+    depends_on:
+      mysql: { condition: service_healthy }
+    networks: [database, application]
+    logging: *logging
+
+  web:
+    build: { context: ../.., target: web }
+    restart: unless-stopped
+    environment:
+      S3_CSP_ORIGIN: ${S3_CSP_ORIGIN:?Set S3_CSP_ORIGIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [application]
+    logging: *logging
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    restart: unless-stopped
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      web: { condition: service_started }
+    networks: [application]
+    logging: *logging
+
+volumes:
+  mysql-data:
+
+networks:
+  database:
+    internal: true
+  application:

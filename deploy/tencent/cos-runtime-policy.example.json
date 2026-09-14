@@ -1,0 +1,17 @@
+{
+  "version": "2.0",
+  "statement": [
+    {
+      "effect": "allow",
+      "action": [
+        "name/cos:GetObject",
+        "name/cos:HeadObject",
+        "name/cos:PutObject"
+      ],
+      "resource": [
+        "qcs::cos:ap-singapore:uid/REPLACE_APPID:REPLACE_APP_BUCKET-REPLACE_APPID/media/*",
+        "qcs::cos:ap-singapore:uid/REPLACE_APPID:REPLACE_APP_BUCKET-REPLACE_APPID/certificates/*"
+      ]
+    }
+  ]
+}

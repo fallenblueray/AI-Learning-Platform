@@ -15,6 +15,7 @@ import { requireThat } from './exceptions/http.exception';
 import { openapi } from './openapi';
 export function createApp() {
   const app = express();
+  const assetOrigins = env.S3_CSP_ORIGIN ? [env.S3_CSP_ORIGIN] : [];
   app.disable('x-powered-by');
   app.set('trust proxy', env.NODE_ENV === 'production' ? 1 : false);
   app.use(
@@ -25,8 +26,8 @@ export function createApp() {
           scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:'],
-          mediaSrc: ["'self'", 'https://*.digitaloceanspaces.com'],
-          connectSrc: ["'self'", 'https://*.digitaloceanspaces.com'],
+          mediaSrc: ["'self'", ...assetOrigins],
+          connectSrc: ["'self'", ...assetOrigins],
           frameAncestors: ["'none'"],
         },
       },

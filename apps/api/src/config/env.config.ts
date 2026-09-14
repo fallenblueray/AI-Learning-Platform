@@ -24,20 +24,27 @@ export const env = z
     S3_BUCKET: z.string().default(''),
     S3_ACCESS_KEY: z.string().default(''),
     S3_SECRET_KEY: z.string().default(''),
+    S3_CSP_ORIGIN: z.string().default(''),
     RESEND_API_KEY: z.string().default(''),
     MAIL_FROM: z.string().default(''),
     CERTIFICATE_FONT_PATH: z.string().default(''),
   })
   .parse(process.env);
 if (env.NODE_ENV === 'production') {
-  if (!env.APP_URL.startsWith('https://') || env.STORAGE_DRIVER !== 's3' || !env.DB_SSL)
-    throw new Error('正式環境必須使用 HTTPS、S3 及資料庫 TLS');
+  if (!env.APP_URL.startsWith('https://') || env.STORAGE_DRIVER !== 's3')
+    throw new Error('正式環境必須使用 HTTPS 及 S3 相容物件儲存');
+  const databaseHost = new URL(env.DATABASE_URL).hostname;
+  if (!env.DB_SSL && !['mysql', '127.0.0.1', 'localhost'].includes(databaseHost))
+    throw new Error('外置正式資料庫必須使用 TLS；只有同機內部資料庫可關閉 DB_SSL');
   if (!env.RESEND_API_KEY || !env.MAIL_FROM || !env.CERTIFICATE_FONT_PATH)
     throw new Error('正式環境必須設定郵件服務及證書字型');
   if (env.JWT_SECRET.startsWith('replace-') || env.ENCRYPTION_KEY.startsWith('replace-'))
     throw new Error('請更換正式環境金鑰');
 }
-if (env.STORAGE_DRIVER === 's3' && (!env.S3_BUCKET || !env.S3_ENDPOINT || !env.S3_ACCESS_KEY || !env.S3_SECRET_KEY))
+if (
+  env.STORAGE_DRIVER === 's3' &&
+  (!env.S3_BUCKET || !env.S3_ENDPOINT || !env.S3_ACCESS_KEY || !env.S3_SECRET_KEY || !env.S3_CSP_ORIGIN)
+)
   throw new Error('S3 設定未完成');
 if (env.LIVE_PAYMENTS_ENABLED && (env.DEMO_MODE || !env.STRIPE_SECRET_KEY.startsWith('sk_live_')))
   throw new Error('正式付款需要正式金鑰並關閉示範模式');
