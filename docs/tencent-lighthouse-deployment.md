@@ -12,6 +12,7 @@ Cloudflare 已建立遠端管理的 `innovate-academy-production` Tunnel，路�
 - Lighthouse 防火牆只開管理用 SSH 來源；毋須開 80、443、3306。
 - 出站須允許 TCP 443，以及 TCP／UDP 7844 供 Cloudflare Tunnel 使用。
 - 全新主機可執行 `sudo deploy/tencent/bootstrap-ubuntu.sh` 安裝 Docker、Compose、AWS CLI、自動安全更新及 2 GB swap。已有其他服務的共用主機須先檢查現有設定，只安裝缺少的依賴，避免重設 Docker 或影響既有服務。
+- Ubuntu 24.04 的套件來源可能沒有 `awscli`。可單獨執行 `sudo bash deploy/tencent/install-aws-cli.sh`，透過 AWS 官方安裝腳本及 GPG 簽章驗證安裝固定版本 2.37.8；已有 AWS CLI 時保留現有安裝。
 
 ## COS 設定
 

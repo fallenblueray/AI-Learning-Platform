@@ -10,7 +10,8 @@ if [[ "${ID}" != ubuntu ]]; then
   exit 1
 fi
 apt-get update
-apt-get install -y ca-certificates curl git awscli unattended-upgrades
+apt-get install -y ca-certificates curl git unzip gnupg unattended-upgrades
+bash "$(dirname "$0")/install-aws-cli.sh"
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 chmod a+r /etc/apt/keyrings/docker.asc
