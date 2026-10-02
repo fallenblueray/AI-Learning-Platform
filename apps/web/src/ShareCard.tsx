@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Download, Check, Sparkles } from 'lucide-react';
 
 export const cardThemes = {
@@ -18,22 +18,90 @@ export function CardArtwork({
   theme?: CardTheme;
 }) {
   const colors = cardThemes[theme];
+  const [layout, setLayout] = useState<CardTextLayout>({
+    lines: [],
+    fontSize: 82,
+    lineHeight: 106.6,
+    firstBaseline: 500,
+  });
+  useEffect(() => {
+    let active = true;
+    const measure = () => {
+      const context = document.createElement('canvas').getContext('2d');
+      if (active && context) setLayout(layoutCardText(context, title.trim() || '你的想法，從這裡開始。'));
+    };
+    measure();
+    void document.fonts.ready.then(measure);
+    return () => {
+      active = false;
+    };
+  }, [title]);
   return (
-    <div className="share-artwork" style={{ background: colors.background, color: colors.foreground }}>
-      <span className="artwork-kicker">A LITTLE IDEA. A NEW POSSIBILITY.</span>
-      <svg className="artwork-symbol" viewBox="0 0 100 100" aria-hidden="true" style={{ color: colors.accent }}>
-        <path
+    <div className="share-artwork fitted-card" style={{ background: colors.background, color: colors.foreground }}>
+      <svg
+        viewBox="0 0 1080 1080"
+        role="img"
+        aria-label={`${title.trim() || '你的想法，從這裡開始。'}${author.trim() ? ` — ${author.trim()}` : ''}`}
+      >
+        <text x="84" y="112" fill="currentColor" fontSize="22" fontFamily="sans-serif" letterSpacing="2">
+          A LITTLE IDEA. A NEW POSSIBILITY.
+        </text>
+        <g transform="translate(805 155) scale(1.9)" fill={colors.accent}>
+          <path d="M45 0h10v32L78 9l7 7-23 24h33v10H63l23 23-7 7-24-23v33H45V58L22 81l-7-7 23-24H5V40h32L14 17l7-7 24 24z" />
+        </g>
+        <g
+          className="card-title-lines"
           fill="currentColor"
-          d="M45 0h10v32L78 9l7 7-23 24h33v10H63l23 23-7 7-24-23v33H45V58L22 81l-7-7 23-24H5V40h32L14 17l7-7 24 24z"
-        />
+          fontFamily="'Noto Sans TC', sans-serif"
+          fontWeight="700"
+          fontSize={layout.fontSize}
+        >
+          {layout.lines.map((line, index) => (
+            <text key={index} x="84" y={layout.firstBaseline + index * layout.lineHeight}>
+              {line}
+            </text>
+          ))}
+        </g>
+        <path d="M84 882H996" stroke="currentColor" strokeOpacity=".35" strokeWidth="2" />
+        <g className="artwork-bottom" fill="currentColor" fontFamily="'Noto Sans TC', sans-serif">
+          <text x="84" y="950" fontSize="28">
+            {author.trim()}
+          </text>
+          <path d="M942 960L982 920M947 920H982V955" fill="none" stroke="currentColor" strokeWidth="3" />
+        </g>
       </svg>
-      <strong>{title || '你的想法，從這裡開始。'}</strong>
-      <div className="artwork-bottom">
-        <span>{author || ' '}</span>
-        <span>↗</span>
-      </div>
     </div>
   );
+}
+
+interface CardTextLayout {
+  lines: string[];
+  fontSize: number;
+  lineHeight: number;
+  firstBaseline: number;
+}
+// The SVG preview and exported PNG share measured lines and a reserved title area.
+// The decorative symbol ends at y=326; the footer begins at y=882.
+export function layoutCardText(context: CanvasRenderingContext2D, title: string): CardTextLayout {
+  for (let fontSize = 82; fontSize >= 24; fontSize -= 2) {
+    context.font = `700 ${fontSize}px "Noto Sans TC", sans-serif`;
+    const lines: string[] = [];
+    for (const paragraph of title.split('\n')) {
+      let line = '';
+      for (const char of Array.from(paragraph)) {
+        if (line && context.measureText(line + char).width > 900) {
+          lines.push(line);
+          line = char;
+        } else line += char;
+      }
+      lines.push(line);
+    }
+    const lineHeight = fontSize * 1.3;
+    const height = lines.length * lineHeight;
+    if (height <= 460 || fontSize === 24)
+      return { lines, fontSize, lineHeight, firstBaseline: 350 + (460 - height) / 2 + fontSize };
+  }
+  throw new Error('未能配置卡片文字');
 }
 
 export function ShareCard() {
@@ -75,25 +143,23 @@ export function ShareCard() {
         ctx.stroke();
       }
       ctx.restore();
-      ctx.font = '700 82px "Noto Sans TC", sans-serif';
-      const lines: string[] = [];
-      let line = '';
-      for (const char of Array.from(title.trim())) {
-        if (ctx.measureText(line + char).width > 900 && line) {
-          lines.push(line);
-          line = char;
-        } else line += char;
-      }
-      if (line) lines.push(line);
-      const start = Math.max(300, 540 - (lines.length - 1) * 58);
-      lines.forEach((text, index) => ctx.fillText(text, 84, start + index * 116));
+      const layout = layoutCardText(ctx, title.trim());
+      ctx.font = `700 ${layout.fontSize}px "Noto Sans TC", sans-serif`;
+      layout.lines.forEach((text, index) => ctx.fillText(text, 84, layout.firstBaseline + index * layout.lineHeight));
       ctx.globalAlpha = 0.35;
       ctx.fillRect(84, 882, 912, 2);
       ctx.globalAlpha = 1;
       ctx.font = '500 28px "Noto Sans TC", sans-serif';
       ctx.fillText(author.trim(), 84, 950, 820);
-      ctx.font = '48px sans-serif';
-      ctx.fillText('↗', 940, 960);
+      ctx.strokeStyle = colors.foreground;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(942, 960);
+      ctx.lineTo(982, 920);
+      ctx.moveTo(947, 920);
+      ctx.lineTo(982, 920);
+      ctx.lineTo(982, 955);
+      ctx.stroke();
       const blob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(
           (value) => (value ? resolve(value) : reject(new Error('圖片匯出失敗，請再試一次。'))),
@@ -124,10 +190,10 @@ export function ShareCard() {
       <h2 id="share-tool-title">這張卡，由你來做。</h2>
       <CardArtwork title={title} author={author} theme={theme} />
       <label>
-        卡片標題 <span className="field-hint">必填 · 最多 48 字</span>
+        卡片標題 <span className="field-hint">必填 · 最多 60 字</span>
         <input
           ref={titleInput}
-          maxLength={48}
+          maxLength={60}
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);

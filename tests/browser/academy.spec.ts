@@ -32,8 +32,11 @@ test('share card exports real 1080 PNGs in all three colors and handles empty/lo
   await page.getByRole('button', { name: '下載我的分享卡' }).click();
   await expect(page.getByText('請先填寫標題，再下載分享卡。')).toBeVisible();
   await expect(title).toBeFocused();
-  await title.fill('這是我的第一個原創分享卡工具把好奇變成作品也把每一次測試變成進步讓想法一步一步成真繼續探索新可能');
-  expect((await title.inputValue()).length).toBe(48);
+  await title.fill('     ');
+  await page.getByRole('button', { name: '下載我的分享卡' }).click();
+  await expect(page.getByText('請先填寫標題，再下載分享卡。')).toBeVisible();
+  await title.fill('學'.repeat(60));
+  expect((await title.inputValue()).length).toBe(60);
   await page.getByRole('textbox', { name: '作者 選填' }).fill('');
   for (const [label, color] of [
     ['海軍藍', [21, 43, 70]],
@@ -68,6 +71,30 @@ test('share card exports real 1080 PNGs in all three colors and handles empty/lo
   }
   await page.getByRole('textbox', { name: '作者 選填' }).fill('測試作者');
   await expect(page.locator('.share-tool .artwork-bottom')).toContainText('測試作者');
+});
+
+test('40, 45 and 60 Chinese characters fit between the artwork and footer on mobile and desktop', async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/?page=first-lesson');
+    for (const count of [40, 45, 60]) {
+      const value = '學'.repeat(count);
+      await page.getByLabel('卡片標題').fill(value);
+      await page.getByRole('textbox', { name: '作者 選填' }).fill('    ');
+      for (const theme of ['海軍藍', '薄荷綠', '暖橙']) {
+        await page.getByLabel(theme, { exact: true }).check();
+        const title = page.locator('.share-tool .card-title-lines');
+        await expect(title).toHaveText(value);
+        const bounds = await title.evaluate((element) => {
+          const rect = (element as unknown as SVGGraphicsElement).getBBox();
+          return { top: rect.y, bottom: rect.y + rect.height, right: rect.x + rect.width };
+        });
+        expect(bounds.top).toBeGreaterThan(326);
+        expect(bounds.bottom).toBeLessThan(850);
+        expect(bounds.right).toBeLessThanOrEqual(996);
+      }
+    }
+  }
 });
 
 test('workshop steps, copy prompt and self-check work without mutating LMS', async ({ page, context }) => {

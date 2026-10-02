@@ -7,7 +7,7 @@ import {
   ChevronRight,
   Copy,
   Download,
-  Play,
+  Clock3,
   PlayCircle,
   Sparkles,
   Lightbulb,
@@ -292,6 +292,11 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
           <Sparkles size={17} /> 原創實作
         </span>
       </div>
+      <nav className="workshop-shortcuts" aria-label="首課快速跳轉">
+        <a href="#lesson-steps">閱讀步驟</a>
+        <a href="#share-tool-title">直接試做</a>
+        <a href="#lesson-prompt">取得提示</a>
+      </nav>
       <div className="workshop-layout">
         <div className="workshop-main">
           <section className="workshop-video" aria-label="首課影片">
@@ -336,7 +341,7 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
                 <img src={firstLessonMedia.poster} alt="首課分享卡工具示意圖" />
                 <div>
                   <span className="pending-icon">
-                    <Play size={24} />
+                    <Clock3 size={24} />
                   </span>
                   <strong>先動手，影片稍後見。</strong>
                   <p>
@@ -379,7 +384,7 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
             </div>
             <small>僅記錄本次頁面練習</small>
           </div>
-          <section className="step-panel" aria-labelledby="step-heading">
+          <section id="lesson-steps" className="step-panel" aria-labelledby="step-heading">
             <nav className="step-tabs" aria-label="首課步驟">
               {lessonSteps.map((item, index) => (
                 <button
@@ -423,7 +428,7 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
               </button>
             </div>
           </section>
-          <section className="prompt-panel">
+          <section id="lesson-prompt" className="prompt-panel">
             <div>
               <div className="eyebrow">YOUR STARTING POINT</div>
               <h2>不用猜怎樣問。從這段開始。</h2>

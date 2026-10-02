@@ -25,8 +25,8 @@
 
 接入時：
 
-1. 交付審核過的 MP4（H.264 + AAC，建議 16:9）和時間軸一致的 UTF-8 WebVTT。公開首課素材放在 `apps/web/public/media/first-lesson/`，例如 `lesson.mp4`、`zh-Hant.vtt`。大型媒體可另作同源靜態資源管理，勿提交臨時簽署 URL 或金鑰。
-2. 將 `firstLessonMedia.video` 設為 `/media/first-lesson/lesson.mp4`，`captions` 設為 `/media/first-lesson/zh-Hant.vtt`。封面已有原創 SVG，可另替換。播放器使用 `controls`、`playsInline`、`preload="metadata"`、`track kind="captions" srclang="zh-Hant" default`，不自動播放。
+1. 交付審核過的 MP4（H.264 + AAC，建議 16:9）和時間軸一致的 UTF-8 WebVTT。依父任務最新要求，交付素材預設私人保存，不放入 `apps/web/public`、GitHub 或公開 bucket。存於私人 Library，工作副本置於 `/workspace/pt-course-dev/private-media/first-lesson/v1/`。交接 manifest 見 [範本](media/first-lesson-intake.example.json)。
+2. 最終 MP4 與 VTT 的私人保存不等於網站公開授權。正式接入前，須選定原 LMS 的授權資產流程或另行明確授權的公開首課來源；未定前 `firstLessonMedia.video/captions` 保持 `null`。不得將 Library 下載 URL 寫入程式或 manifest。封面已有原創 SVG，可另替換。播放器使用 `controls`、`playsInline`、`preload="metadata"`、`track kind="captions" srclang="zh-Hant" default`，不自動播放。
 3. 首頁 FAQ、首課卡片及播放器狀態由同一媒體設定自動切換；另外更新 README 與本文件的交付狀態。媒體錯誤會顯示可重試訊息並保留文字教材。
 4. 用桌面／手機真實播放確認：音訊為審核聲線、片頭／片中／片尾字幕對時、暫停／跳轉／全螢幕、無聲播放可理解、重新載入／錯誤處理、HTTP MIME `video/mp4` 和 `text/vtt` 正確。
 5. 目前 WebVTT 整合針對**公開首課**。原 LMS 的私人媒體仍採既有 `asset_key` 與授權短效 URL；未擴大儲存權限、未公開私人教材，也沒有把舊報讀綁到新媒體。正式課程若要新增私人字幕，需另增有版本控制的字幕欄位與授權資產流程。

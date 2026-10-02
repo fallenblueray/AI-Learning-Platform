@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "lesson_id": "first-share-card",
+  "asset_version": "v1",
+  "visibility": "private",
+  "publication_status": "not_published",
+  "voice": "Juno Dragon HD",
+  "audio_language": "yue-HK",
+  "caption_language": "zh-Hant",
+  "expected_scene_count": 13,
+  "duration_seconds": null,
+  "files": [
+    {
+      "role": "video",
+      "filename": "first-lesson-juno-yue-v1.mp4",
+      "mime_type": "video/mp4",
+      "target_max_bytes": 104857600,
+      "existing_admin_max_bytes": 262144000,
+      "actual_bytes": null,
+      "sha256": null,
+      "library_file_id": null
+    },
+    {
+      "role": "captions",
+      "filename": "first-lesson-zh-Hant-v1.vtt",
+      "mime_type": "text/vtt",
+      "target_max_bytes": 1048576,
+      "actual_bytes": null,
+      "sha256": null,
+      "library_file_id": null
+    },
+    {
+      "role": "poster",
+      "filename": "first-lesson-poster-v1.jpg",
+      "mime_type": "image/jpeg",
+      "target_max_bytes": 2097152,
+      "actual_bytes": null,
+      "sha256": null,
+      "library_file_id": null
+    }
+  ],
+  "chapters": [],
+  "review": { "narration_checked": false, "caption_timing_checked": false, "mobile_playback_checked": false },
+  "runtime_urls": null
+}
