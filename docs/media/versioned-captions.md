@@ -1,6 +1,6 @@
 # 與既有課程版本綁定的字幕
 
-字幕是 `CourseContent.lessons[].captions` 的一部分，與影片同時存入 `course_versions.content`；不使用獨立公開 sidecar。既有無字幕版本仍可讀，不需 migration，也不改变價格、免費名額或報讀規則。
+字幕是 `CourseContent.lessons[].captions` 的一部分，與影片同時存入 `course_versions.content`；不使用獨立公開 sidecar。既有無字幕版本仍可讀，不需 migration，也不改變價格、免費名額或報讀規則。
 
 ## 授權與資料契約
 
