@@ -8,7 +8,7 @@
         "name/cos:GetBucket"
       ],
       "resource": [
-        "qcs::cos:ap-hongkong:uid/REPLACE_APPID:REPLACE_BACKUP_BUCKET-REPLACE_APPID"
+        "qcs::cos:ap-hongkong:uid/REPLACE_APPID:REPLACE_BACKUP_BUCKET-REPLACE_APPID/"
       ]
     },
     {
