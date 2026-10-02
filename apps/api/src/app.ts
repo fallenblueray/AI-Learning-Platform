@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import Container from 'typedi';
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { env } from './config/env.config';
 import { sequelize } from './database/connection';
 import { csrf, errors, identify } from './middlewares/http';
@@ -77,7 +78,8 @@ export function createApp(mediaReview?: Omit<Parameters<typeof firstLessonMediaR
       res.attachment('certificate.pdf').type('application/pdf').send(pdf);
       return;
     }
-    res.sendFile(file);
+    // The configured storage root may be .local; only the validated basename is served.
+    res.sendFile(path.basename(file), { root: path.dirname(file), dotfiles: 'deny' });
   });
   app.use(
     '/api/v1/first-lesson-media',

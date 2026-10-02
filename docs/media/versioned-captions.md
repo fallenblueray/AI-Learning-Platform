@@ -29,3 +29,5 @@
 - 正式影片、封面像素、字幕時軸、真人聽審仍待取得來源檔；禁止用 fixture 結果代替。
 
 本輪結果：7 項 unit、18 項 integration、11 項 E2E、typecheck 及 production build 通過。額外實際管理員登入＋MFA，完成 VTT 上載、語言／名稱／預設驗證與移除草稿字幕，未發布課程。見 [QA 報告](caption-integration-qa.json)、[手機播放器](../screenshots/lms-caption-mobile.jpg)、[桌面播放器](../screenshots/lms-caption-desktop.jpg)、[手機字幕編輯器](../screenshots/caption-admin-mobile.jpg)。
+
+CI 曾揭示預設 `.local/storage` 被 Express 隱藏路徑規則阻擋；現以已驗證儲存 root 加受限 basename 回應，保留 `dotfiles: deny`。以 CI 同樣的相對儲存路徑重跑 18 項整合測試已通過；此修正同時適用既有 local 影片。
