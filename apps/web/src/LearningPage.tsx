@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2, FileText, PlayCircle, Trophy, Award, Download } from 'lucide-react';
 import { api, post, levelNames } from './api';
 import type { Learning } from './types';
@@ -36,13 +36,23 @@ export function LearningPage({
     [answers, setAnswers] = useState<Record<string, number>>({}),
     [result, setResult] = useState<Result | null>(null),
     [busy, setBusy] = useState(false),
-    [asset, setAsset] = useState(''),
-    [captions, setCaptions] = useState<CaptionTrack[]>([]),
+    [mediaAsset, setMediaAsset] = useState(''),
+    [mediaCaptions, setMediaCaptions] = useState<CaptionTrack[]>([]),
+    [mediaOwner, setMediaOwner] = useState(''),
+    [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null),
     [captionId, setCaptionId] = useState('off'),
     [mediaRevision, setMediaRevision] = useState(0),
     [error, setError] = useState('');
   const video = useRef<HTMLVideoElement | null>(null),
-    lastSaved = useRef(0);
+    lastSaved = useRef(0),
+    mediaRequest = useRef<AbortController | null>(null),
+    mediaSequence = useRef(0),
+    currentScope = useRef(''),
+    selectedCaption = useRef('off');
+  const attachVideo = useCallback((node: HTMLVideoElement | null) => {
+    video.current = node;
+    setVideoElement(node);
+  }, []);
   useEffect(() => {
     let active = true;
     setData(null);
@@ -63,45 +73,103 @@ export function LearningPage({
     };
   }, [id]);
   const lesson = data?.content.lessons[lessonIndex];
+  const scope = lesson ? `${id}:${lesson.id}` : '';
+  useLayoutEffect(() => {
+    currentScope.current = scope;
+    return () => {
+      currentScope.current = '';
+    };
+  }, [scope]);
+  // Never render a previous lesson's source under a new lesson/progress identity.
+  const asset = mediaOwner === scope ? mediaAsset : '';
+  const captions = mediaOwner === scope ? mediaCaptions : [];
+  const loadMedia = useCallback(
+    async (lessonId: string, preserveSelection: boolean) => {
+      const owner = `${id}:${lessonId}`;
+      const sequence = ++mediaSequence.current;
+      mediaRequest.current?.abort();
+      const controller = new AbortController();
+      mediaRequest.current = controller;
+      const isCurrent = () =>
+        !controller.signal.aborted && sequence === mediaSequence.current && currentScope.current === owner;
+      try {
+        const response = await api<MediaResponse>(`/enrollments/${id}/lessons/${lessonId}/asset`, {
+          signal: controller.signal,
+        });
+        if (!isCurrent()) return;
+        setMediaOwner(owner);
+        setMediaAsset(response.url);
+        setMediaCaptions(response.captions ?? []);
+        setCaptionId((selected) =>
+          preserveSelection
+            ? (response.captions?.find((track) => track.id === selected)?.id ?? 'off')
+            : (response.captions?.find((track) => track.default)?.id ?? 'off'),
+        );
+        setMediaRevision((value) => value + 1);
+      } catch (error) {
+        if (isCurrent()) notify((error as Error).message);
+      }
+    },
+    [id, notify],
+  );
   useEffect(() => {
-    let active = true;
-    setAsset('');
-    setCaptions([]);
+    setMediaOwner('');
+    setMediaAsset('');
+    setMediaCaptions([]);
     setCaptionId('off');
     lastSaved.current = 0;
-    if (lesson?.has_asset)
-      api<MediaResponse>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
-        .then((r) => {
-          if (active) {
-            setAsset(r.url);
-            setCaptions(r.captions ?? []);
-            setCaptionId(r.captions?.find((t) => t.default)?.id ?? 'off');
-          }
-        })
-        .catch((e) => {
-          if (active) notify(e.message);
-        });
+    if (lesson?.has_asset) void loadMedia(lesson.id, false);
     return () => {
-      active = false;
+      ++mediaSequence.current;
+      mediaRequest.current?.abort();
     };
-  }, [id, lesson?.id, lesson?.has_asset, notify]);
-  useEffect(() => {
-    const tracks = video.current?.textTracks;
+  }, [id, lesson?.id, lesson?.has_asset, loadMedia]);
+  useLayoutEffect(() => {
+    selectedCaption.current = captionId;
+    const tracks = videoElement?.textTracks;
     if (tracks)
       Array.from(tracks).forEach((track, index) => {
         track.mode = captions[index]?.id === captionId ? 'showing' : 'disabled';
       });
-  }, [captionId, captions, asset, mediaRevision]);
-  useEffect(() => {
-    const tracks = video.current?.textTracks;
+  }, [captionId, mediaCaptions, mediaOwner, scope, videoElement]);
+  useLayoutEffect(() => {
+    const tracks = videoElement?.textTracks;
+    if (!tracks || !videoElement) return;
+    let initializing = videoElement.readyState < 2;
+    const restoreSelection = () => {
+      Array.from(tracks).forEach((track, index) => {
+        const mode = captions[index]?.id === selectedCaption.current ? 'showing' : 'disabled';
+        if (track.mode !== mode) track.mode = mode;
+      });
+    };
+    const ready = () => {
+      restoreSelection();
+      initializing = false;
+    };
     const sync = () => {
-      if (!tracks) return;
+      if (video.current !== videoElement || !videoElement.isConnected) return;
+      // Browser language preferences can enable extra tracks while a new video initializes.
+      // Preserve the application's selection until that initial load has settled.
+      if (initializing || Array.from(tracks).filter((track) => track.mode === 'showing').length > 1) {
+        restoreSelection();
+        return;
+      }
       const index = Array.from(tracks).findIndex((track) => track.mode === 'showing');
       setCaptionId(captions[index]?.id ?? 'off');
     };
-    tracks?.addEventListener('change', sync);
-    return () => tracks?.removeEventListener('change', sync);
-  }, [captions, asset, mediaRevision]);
+    restoreSelection();
+    const loading = () => {
+      initializing = true;
+    };
+    videoElement.addEventListener('emptied', loading);
+    videoElement.addEventListener('loadeddata', ready);
+    tracks.addEventListener('change', sync);
+    return () => {
+      videoElement.removeEventListener('emptied', loading);
+      videoElement.removeEventListener('loadeddata', ready);
+      tracks.removeEventListener('change', sync);
+    };
+  }, [mediaCaptions, mediaOwner, scope, videoElement]);
   async function save(read: boolean, position = 0) {
     if (!lesson) return;
     try {
@@ -282,7 +350,7 @@ export function LearningPage({
                 {lesson.kind === 'video' && asset && (
                   <video
                     key={`${lesson.id}:${mediaRevision}`}
-                    ref={video}
+                    ref={attachVideo}
                     controls
                     playsInline
                     preload="metadata"
@@ -344,19 +412,7 @@ export function LearningPage({
                 )}
                 {lesson.kind === 'text' && asset && <img className="lesson-image" src={asset} alt={lesson.title} />}
                 {lesson.has_asset && (
-                  <button
-                    className="text-button"
-                    onClick={() =>
-                      api<MediaResponse>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
-                        .then((r) => {
-                          setAsset(r.url);
-                          setCaptions(r.captions ?? []);
-                          setCaptionId(r.captions?.find((t) => t.id === captionId)?.id ?? 'off');
-                          setMediaRevision((value) => value + 1);
-                        })
-                        .catch((e) => notify(e.message))
-                    }
-                  >
+                  <button className="text-button" onClick={() => void loadMedia(lesson.id, true)}>
                     重新載入教材
                   </button>
                 )}

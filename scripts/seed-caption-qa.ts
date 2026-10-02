@@ -49,6 +49,14 @@ async function main() {
       ],
     },
   ];
+  const secondVideo = `media/${randomUUID()}.mp4`;
+  await storage.put(secondVideo, await fs.readFile('.local/qa/media-fixture/fixture.mp4'), 'video/mp4');
+  content.lessons.push({
+    ...structuredClone(content.lessons[0]),
+    id: 'fixture-video-b',
+    title: '第二個合成影片',
+    asset_key: secondVideo,
+  });
   const course = await Course.create({ id: randomUUID(), draft: content, is_demo: true });
   const version = await Version.create({ id: randomUUID(), course_id: course.id, number: 1, content });
   await Course.update({ published_version_id: version.id }, { where: { id: course.id } });

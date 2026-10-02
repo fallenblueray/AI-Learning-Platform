@@ -31,3 +31,14 @@
 本輪結果：7 項 unit、18 項 integration、11 項 E2E、typecheck 及 production build 通過。額外實際管理員登入＋MFA，完成 VTT 上載、語言／名稱／預設驗證與移除草稿字幕，未發布課程。見 [QA 報告](caption-integration-qa.json)、[手機播放器](../screenshots/lms-caption-mobile.jpg)、[桌面播放器](../screenshots/lms-caption-desktop.jpg)、[手機字幕編輯器](../screenshots/caption-admin-mobile.jpg)。
 
 CI 曾揭示預設 `.local/storage` 被 Express 隱藏路徑規則阻擋；現以已驗證儲存 root 加受限 basename 回應，保留 `dotfiles: deny`。以 CI 同樣的相對儲存路徑重跑 18 項整合測試已通過；此修正同時適用既有 local 影片。
+
+## 播放器生命週期回歸
+
+以 `11632db` 為基準先新增兩項真實瀏覽器重現測試，兩項均失敗：測驗往返後英文選軌變成停用；A 的延遲刷新回應覆蓋了 B 的媒體。修正後：
+
+- 字幕模式及原生 change listener 綁定實際 video DOM，卸載時清理，重建時恢復選擇。另處理瀏覽器初始化時自動開啟額外語言軌的情況，保留使用者選軌／關閉設定。
+- 初始載入與手動刷新共用 AbortController、遞增請求序號及 enrollment／lesson 歸屬檢查。新請求、切換單元或離開頁面取消舊請求；晚到的成功／錯誤不更新目前單元。未取得目前單元媒體前，不渲染前一單元的來源。
+- 四項針對性 E2E 通過：桌面／手機測驗往返與 native 選軌同步；延期 A 回應後 B 影片／字幕與 progress 仍屬 B；離頁取消且不顯示舊錯誤；模擬媒體 403／metadata 401 後，實際更新 session 並保留選軌重新播放。
+- 完整 15 項 Chromium E2E、typecheck、production build 通過。測試使用兩單元合成教材，未重試正式媒體下載，未宣稱正式影片已驗收。
+
+測試入口：`tests/browser/player-lifecycle.spec.ts`。`scripts/seed-caption-qa.ts` 現建立兩個不同媒體 key 的合成單元，用以驗證來源和進度的歸屬。
