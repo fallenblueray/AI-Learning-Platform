@@ -9,7 +9,7 @@ export const firstLessonMediaStatus = firstLessonMedia.video
   ? firstLessonMedia.captions
     ? '配音影片與字幕已加入'
     : '影片已加入 · 字幕待加入'
-  : '文字實作已開放 · 影片製作中';
+  : '文字實作已開放 · 影片待開放';
 
 export const firstLessonTitle = 'AI新手不用怕！跟著做出你的第一個小工具';
 export const firstLessonPrompt = `請幫我製作一個原創「分享卡小工具」，讓沒有程式背景的人也能使用。

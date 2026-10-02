@@ -12,6 +12,7 @@ import { authRoutes, courseRoutes, paymentRoutes, adminRoutes } from './routes';
 import { PaymentController } from './controllers/payment.controller';
 import { StorageService } from './services/storage.service';
 import { requireThat } from './exceptions/http.exception';
+import { firstLessonMediaRoutes } from './routes/first-lesson-media';
 import { openapi } from './openapi';
 export function createApp() {
   const app = express();
@@ -78,6 +79,14 @@ export function createApp() {
     }
     res.sendFile(file);
   });
+  app.use(
+    '/api/v1/first-lesson-media',
+    firstLessonMediaRoutes({
+      enabled: env.FIRST_LESSON_PREVIEW_ENABLED,
+      directory: env.FIRST_LESSON_PREVIEW_DIR,
+      production: env.NODE_ENV === 'production',
+    }),
+  );
   app.use('/api/v1', csrf);
   app.use('/api/v1/auth', authRoutes());
   app.use('/api/v1', courseRoutes(), paymentRoutes());

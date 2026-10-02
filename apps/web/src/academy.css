@@ -2312,3 +2312,12 @@ main {
     font-size: 13px;
   }
 }
+.preview-status {
+  padding: 12px 16px;
+  border: 1px solid #d6b990;
+  background: #fbf2e5;
+  color: #62451e;
+  font-size: 13px;
+  line-height: 1.7;
+  border-radius: 10px;
+}

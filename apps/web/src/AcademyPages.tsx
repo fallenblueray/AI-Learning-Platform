@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -260,10 +260,42 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
   const [done, setDone] = useState<number[]>([]);
   const [copyStatus, setCopyStatus] = useState('');
   const [mediaError, setMediaError] = useState(false);
+  const [captionError, setCaptionError] = useState(false);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [review, setReview] = useState(false);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [media, setMedia] = useState<{
+    video: string | null;
+    captions: string | null;
+    poster: string;
+    chapters?: string;
+  }>(firstLessonMedia);
+  const [previewStatus, setPreviewStatus] = useState('');
+  const previewRequested = new URLSearchParams(window.location.search).get('mediaPreview') === '1';
+  useEffect(() => {
+    setMedia(firstLessonMedia);
+    if (!previewRequested) return;
+    const controller = new AbortController();
+    setPreviewStatus('正在驗證私人媒體審核存取…');
+    fetch('/api/v1/first-lesson-media/v1', { credentials: 'same-origin', signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(String(response.status));
+        const value = await response.json();
+        const base = '/api/v1/first-lesson-media/v1/';
+        if (
+          value.access !== 'admin-mfa-preview' ||
+          !['video', 'captions', 'poster', 'chapters'].every((key) => value[key] === base + key)
+        )
+          throw new Error('invalid');
+        setMedia(value);
+        setPreviewStatus('私人審核預覽 · 僅限已完成雙重驗證的管理員 · 尚未正式發布');
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') setPreviewStatus('私人影片尚未可用。請確認管理員雙重驗證及本機媒體驗證狀態。');
+      });
+    return () => controller.abort();
+  }, [previewRequested]);
   const current = lessonSteps[step];
   async function copyPrompt() {
     try {
@@ -300,33 +332,35 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
         <a href="#lesson-prompt">完整提示</a>
         <span>免登入開始 · 公開練習</span>
       </nav>
+      {previewRequested && (
+        <p className="preview-status" role="status">
+          {previewStatus}
+        </p>
+      )}
       <div className="workshop-layout">
         <div className="workshop-main">
-          <section
-            className={`workshop-video ${!firstLessonMedia.video ? 'media-not-ready' : ''}`}
-            aria-label="首課影片"
-          >
-            {firstLessonMedia.video ? (
+          <section className={`workshop-video ${!media.video ? 'media-not-ready' : ''}`} aria-label="首課影片">
+            {media.video ? (
               <>
                 <video
                   ref={videoRef}
                   controls
                   playsInline
                   preload="metadata"
-                  poster={firstLessonMedia.poster}
-                  src={firstLessonMedia.video}
+                  poster={media.poster}
+                  src={media.video}
                   onError={() => setMediaError(true)}
                 >
-                  {firstLessonMedia.captions && (
-                    <track
-                      kind="captions"
-                      src={firstLessonMedia.captions}
-                      srcLang="zh-Hant"
-                      label="繁體中文字幕"
-                      default
-                    />
+                  {media.captions && (
+                    <track kind="captions" src={media.captions} srcLang="zh-Hant" label="繁體中文字幕" default />
                   )}
+                  {media.chapters && <track kind="chapters" src={media.chapters} srcLang="zh-Hant" label="課程章節" />}
                 </video>
+                {captionError && (
+                  <p className="media-error" role="alert">
+                    字幕暫時未能載入。請重新載入影片，或繼續閱讀下方文字教材。
+                  </p>
+                )}
                 {mediaError && (
                   <div className="media-error" role="alert">
                     影片暫時未能載入。你可繼續閱讀下方教材。
@@ -347,16 +381,16 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
                 <Clock3 size={20} />
                 <div>
                   <strong>影片準備中，文字實作已開放</strong>
-                  <p>配音影片與繁體中文字幕製作中。</p>
+                  <p>配音影片與繁體中文字幕將在驗收後開放。</p>
                 </div>
               </div>
             )}
-            {firstLessonMedia.video && (
+            {media.video && (
               <div className="video-bottom">
                 <span>
                   <PlayCircle size={16} /> 第一課 · 分享卡小工具
                 </span>
-                <span>{firstLessonMedia.captions ? '可開啟播放器字幕' : '字幕尚未加入'}</span>
+                <span>{media.captions ? '可開啟播放器字幕' : '字幕尚未加入'}</span>
               </div>
             )}
           </section>

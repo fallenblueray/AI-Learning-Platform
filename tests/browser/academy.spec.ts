@@ -15,7 +15,7 @@ test('home, first workshop and browser back remain usable without an account', a
     if (firstLessonMedia.captions)
       await expect(page.locator('track[kind="captions"]')).toHaveAttribute('src', firstLessonMedia.captions);
   } else {
-    await expect(page.getByText('配音影片與繁體中文字幕製作中。')).toBeVisible();
+    await expect(page.getByText('配音影片與繁體中文字幕將在驗收後開放。')).toBeVisible();
     await expect(page.locator('video')).toHaveCount(0);
   }
   await page.goBack();
@@ -221,4 +221,24 @@ test('catalog fetch failures offer a working retry and empty search has feedback
   await expect(page.getByRole('heading', { name: '下一段學習旅程，準備中。' })).toBeVisible();
   await page.getByLabel('搜尋課程').fill('沒有這門課');
   await expect(page.getByRole('button', { name: '查看首課：分享卡小工具' })).toHaveCount(0);
+});
+
+test('private media preview stays unavailable on denied access or untrusted metadata', async ({ page }) => {
+  for (const body of [
+    null,
+    {
+      access: 'admin-mfa-preview',
+      video: 'https://untrusted.invalid/movie.mp4',
+      captions: 'https://untrusted.invalid/captions.vtt',
+    },
+  ]) {
+    await page.route('**/api/v1/first-lesson-media/v1', (route) =>
+      route.fulfill({ status: body ? 200 : 403, json: body ?? { error: 'ADMIN_MFA_REQUIRED' } }),
+    );
+    await page.goto('/?page=first-lesson&mediaPreview=1');
+    await expect(page.getByText('私人影片尚未可用。請確認管理員雙重驗證及本機媒體驗證狀態。')).toBeVisible();
+    await expect(page.locator('video')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '下載我的分享卡' })).toBeVisible();
+    await page.unroute('**/api/v1/first-lesson-media/v1');
+  }
 });
