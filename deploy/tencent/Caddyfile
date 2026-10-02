@@ -1,4 +1,6 @@
 :80 {
+  @www host www.innovateacademy.net
+  redir @www https://innovateacademy.net{uri} 308
   encode zstd gzip
   header {
     X-Content-Type-Options nosniff
