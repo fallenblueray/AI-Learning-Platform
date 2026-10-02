@@ -1,5 +1,13 @@
 # Codex Cloud 日常開發與全新工作驗證
 
+## 當前交付狀態（2026-10-02）
+
+已明確選擇正確的 **fallenblueray** 官方 GitHub connector connection，成功提交至遠端並建立 [draft PR #1](https://github.com/fallenblueray/AI-Learning-Platform/pull/1)；首次遠端提交的 [CI #11](https://github.com/fallenblueray/AI-Learning-Platform/actions/runs/36987522692) 已全部通過。後續文件提交仍須以該 commit 的 PR checks 核對，不能沿用前次 CI 結果。
+
+雲端日常開發與測試可繼續，提交及 PR 更新使用明確選擇正確帳戶的官方 connector。Shell 的 `git push` 錯誤身份問題仍未修復，因此不使用該推送途徑；不更改 secrets、憑證或權限。MySQL 每個新任務仍須手動執行保存的啟動腳本並核對 readiness，自動 startup 未驗收。PR 保持 draft，未合併或部署。
+
+以下首次驗證失敗及未推送敘述均保留為歷史紀錄；不代表目前 connector 交付仍受阻。
+
 ## 環境與追溯
 
 日常開發使用已發布的私密 saved cloud 環境 **PT course development**，儲存庫為 [fallenblueray/AI-Learning-Platform](https://github.com/fallenblueray/AI-Learning-Platform)。
@@ -12,7 +20,7 @@
 
 所有本次命令都在所選雲端環境的 `/workspace/AI-Learning-Platform` 執行，沒有呼叫本機 executor、複製本機工具、憑證或資料庫。雲端工作可獨立 checkout、安裝、型別檢查與建置，但本次資料庫還原尚未成功，不能把「已發布環境」等同於「全新工作全部驗證通過」。
 
-後續第二次 fresh 工作已驗證資產還原及手動啟動後的完整測試，詳見下方追加紀錄；上述描述與首次實測表保留為首次工作的歷史證據。整體遷移仍未完成：自動啟動未驗收，GitHub 推送／PR 仍受權限 403 阻擋。
+後續第二次 fresh 工作已驗證資產還原及手動啟動後的完整測試，詳見下方追加紀錄；上述描述與首次實測表保留為首次工作的歷史證據。當時整體遷移未完成：自動啟動未驗收，GitHub 推送／PR 受權限 403 阻擋。後續 connector 交付狀態見本文開頭。
 
 ## 每次工作的流程
 
@@ -105,7 +113,7 @@ bash /workspace/pt-course-dev/mysql-start.sh
 | integration        | 16 項通過                                                                         |
 | audit 高風險門檻   | 通過；仍有 6 項 moderate                                                          |
 
-這次結果證明雲端資產與依賴可還原，且手動啟動後可完成上述驗證，沒有本機依賴；**不代表全自動 startup 已成功，也不代表 GitHub CI 已執行**。先前 onboarding 通過仍不能替代 fresh 工作驗證。GitHub 錯誤帳戶造成的 403 尚未修正，成果未推送、未建立 PR，因此整體遷移尚未完成。
+這次結果證明雲端資產與依賴可還原，且手動啟動後可完成上述驗證，沒有本機依賴；**不代表全自動 startup 已成功，也不代表 GitHub CI 已執行**。先前 onboarding 通過仍不能替代 fresh 工作驗證。此驗證當時，GitHub 錯誤帳戶造成的 403 尚未修正，成果未推送、未建立 PR，因此整體遷移尚未完成；後續已透過正確 connector 完成交付，shell 身份問題仍保留。
 
 ## 雲端、本機與 GitHub 的分工
 
@@ -115,7 +123,7 @@ bash /workspace/pt-course-dev/mysql-start.sh
 
 CI 目前只做 install、typecheck、build、unit、integration、audit，沒有部署步驟。外部 GitHub hooks／GitHub Apps 的副作用未能核實，不能保證推送不觸發任何外部自動化。本工作不執行正式部署或服務操作。
 
-## 本次提交與遠端狀態
+## 歷史紀錄：首次提交受阻時的遠端狀態
 
 文件分支：`codex/cloud-development-validation-20261002`。雲端 Git 推送收到儲存庫權限 HTTP 403；實際 Git 身份與擁有者 connector 不同。已停止遠端寫入，沒有改用另一帳戶或 API 繞過拒絕。需要先由擁有者修正此 saved environment 的 Git 身份／授權，再明確恢復推送工作。
 
