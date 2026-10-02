@@ -17,6 +17,8 @@ task_dir="$(mktemp -d)"
 stamp="$(date -u +%Y-%m-%dT%H-%M-%SZ)"
 archive="$task_dir/pt-academy-$stamp.sql.gz"
 trap 'rm -rf -- "$task_dir"' EXIT
+printf '[default]\ns3 =\n    addressing_style = virtual\n' > "$task_dir/aws-config"
+export AWS_CONFIG_FILE="$task_dir/aws-config"
 docker compose --env-file .env.production exec -T mysql sh -c \
   'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -uroot --single-transaction --routines --triggers --set-gtid-purged=OFF --no-tablespaces pt_academy' \
   | gzip -9 > "$archive"

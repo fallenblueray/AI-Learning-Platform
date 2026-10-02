@@ -12,6 +12,9 @@ task_dir="$(mktemp -d)"
 archive="$task_dir/restore.sql.gz"
 checksum="$archive.sha256"
 trap 'rm -rf -- "$task_dir"' EXIT
+printf '[default]\ns3 =\n    addressing_style = virtual\n' > "$task_dir/aws-config"
+export AWS_CONFIG_FILE="$task_dir/aws-config"
+export AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED
 AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" AWS_DEFAULT_REGION="$S3_REGION" \
   aws --endpoint-url "$S3_ENDPOINT" s3 cp "s3://$BACKUP_BUCKET/$BACKUP_OBJECT" "$archive" --only-show-errors
 AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" AWS_DEFAULT_REGION="$S3_REGION" \
