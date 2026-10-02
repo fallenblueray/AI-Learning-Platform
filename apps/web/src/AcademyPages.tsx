@@ -293,13 +293,19 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
         </span>
       </div>
       <nav className="workshop-shortcuts" aria-label="首課快速跳轉">
-        <a href="#lesson-steps">閱讀步驟</a>
-        <a href="#share-tool-title">直接試做</a>
-        <a href="#lesson-prompt">取得提示</a>
+        <a className="primary-shortcut" href="#lesson-steps" onClick={() => setStep(0)}>
+          開始第1步
+        </a>
+        <a href="#share-tool-title">試做工具</a>
+        <a href="#lesson-prompt">完整提示</a>
+        <span>免登入開始 · 公開練習</span>
       </nav>
       <div className="workshop-layout">
         <div className="workshop-main">
-          <section className="workshop-video" aria-label="首課影片">
+          <section
+            className={`workshop-video ${!firstLessonMedia.video ? 'media-not-ready' : ''}`}
+            aria-label="首課影片"
+          >
             {firstLessonMedia.video ? (
               <>
                 <video
@@ -337,35 +343,31 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
                 )}
               </>
             ) : (
-              <div className="video-pending">
-                <img src={firstLessonMedia.poster} alt="首課分享卡工具示意圖" />
+              <div className="pending-media-note">
+                <Clock3 size={20} />
                 <div>
-                  <span className="pending-icon">
-                    <Clock3 size={24} />
-                  </span>
-                  <strong>先動手，影片稍後見。</strong>
-                  <p>
-                    配音影片與繁體中文字幕製作中。
-                    <br />
-                    現在可跟著下方步驟，完成你的分享卡。
-                  </p>
-                  <span className="status-pill">文字教材與實作已開放</span>
+                  <strong>影片準備中，文字實作已開放</strong>
+                  <p>配音影片與繁體中文字幕製作中。</p>
                 </div>
               </div>
             )}
-            <div className="video-bottom">
-              <span>
-                <PlayCircle size={16} /> 第一課 · 分享卡小工具
-              </span>
-              <span>
-                {firstLessonMedia.captions
-                  ? '可開啟播放器字幕'
-                  : firstLessonMedia.video
-                    ? '字幕尚未加入'
-                    : '配音與字幕待加入'}
-              </span>
-            </div>
+            {firstLessonMedia.video && (
+              <div className="video-bottom">
+                <span>
+                  <PlayCircle size={16} /> 第一課 · 分享卡小工具
+                </span>
+                <span>{firstLessonMedia.captions ? '可開啟播放器字幕' : '字幕尚未加入'}</span>
+              </div>
+            )}
           </section>
+          <div className="workshop-result-preview">
+            <CardArtwork title={'我的第一張\n分享卡'} author="" theme="mint" />
+            <div>
+              <span>這次會做出的成果</span>
+              <strong>你的第一張分享卡</strong>
+              <p>完成後可下載 1080 PNG。</p>
+            </div>
+          </div>
           <div className="workshop-progress">
             <span>
               跟著做{' '}
@@ -395,7 +397,8 @@ export function FirstLessonPage({ onCatalog }: { onCatalog: () => void }) {
                   onClick={() => setStep(index)}
                 >
                   {done.includes(index) ? <Check size={16} /> : `0${index + 1}`}
-                  <span>{item.tag}</span>
+                  <span className="step-tag-full">{item.tag}</span>
+                  <span className="step-tag-compact">{['目標', '需求', '實作', '檢查', '回顧'][index]}</span>
                 </button>
               ))}
             </nav>

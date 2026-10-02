@@ -275,6 +275,10 @@ export function App() {
             >
               <Menu size={22} />
             </button>
+            <a className="mobile-brand" href="/?page=home" aria-label="創科學苑首頁">
+              <Sparkles size={19} />
+              <span>創科學苑</span>
+            </a>
             <span>學習空間</span>
             <ChevronRight size={14} />
             <strong>

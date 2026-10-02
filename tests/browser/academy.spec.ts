@@ -149,6 +149,60 @@ test('mobile navigation, keyboard modal and responsive layouts', async ({ page }
   await expect(page.locator('.top-actions').getByRole('button', { name: '登入 / 註冊' })).toBeFocused();
 });
 
+test('small phones show the brand and first step before the full tool, with a usable drawer', async ({ page }) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/?page=first-lesson');
+    await expect(page.locator('.mobile-brand')).toHaveText('創科學苑');
+    const bounds = await page.evaluate(() =>
+      Object.fromEntries(
+        [
+          '.mobile-brand',
+          '.top-actions',
+          '.workshop-video',
+          '.workshop-result-preview',
+          '.step-panel',
+          '.step-body h2',
+          '.share-tool',
+          '.mobile-bottom-nav',
+        ].map((selector) => {
+          const rect = document.querySelector(selector)!.getBoundingClientRect();
+          return [
+            selector,
+            { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, height: rect.height },
+          ];
+        }),
+      ),
+    );
+    expect(bounds['.mobile-brand'].right).toBeLessThan(bounds['.top-actions'].left);
+    if (!firstLessonMedia.video) expect(bounds['.workshop-video'].height).toBeLessThan(100);
+    expect(bounds['.workshop-result-preview'].bottom).toBeLessThan(bounds['.step-panel'].top);
+    expect(bounds['.step-panel'].bottom).toBeLessThan(bounds['.share-tool'].top);
+    if (!firstLessonMedia.video) expect(bounds['.step-body h2'].bottom).toBeLessThan(bounds['.mobile-bottom-nav'].top);
+    await expect(page.getByRole('link', { name: '開始第1步' })).toHaveClass('primary-shortcut');
+    await expect(page.getByText('免登入開始 · 公開練習')).toBeVisible();
+    await page.locator('.step-tabs button').nth(2).click();
+    await page.getByRole('link', { name: '開始第1步' }).click();
+    await expect(page.locator('.step-body h2')).toHaveText('先看成果，再開始');
+    await page.evaluate(() => window.scrollTo(0, 0));
+    for (const selector of ['.step-tag-compact', '.mobile-bottom-nav span', '.field-hint', '.tool-heading > span']) {
+      expect(
+        await page
+          .locator(selector)
+          .evaluateAll((elements) => elements.every((element) => parseFloat(getComputedStyle(element).fontSize) >= 12)),
+      ).toBe(true);
+    }
+    await page.getByRole('button', { name: '開啟選單' }).click();
+    await expect
+      .poll(() => page.locator('.sidebar').evaluate((element) => Math.round(element.getBoundingClientRect().left)))
+      .toBe(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(page.locator('.sidebar').getByRole('button', { name: '探索課程', exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.sidebar')).not.toHaveClass(/open/);
+  }
+});
+
 test('catalog fetch failures offer a working retry and empty search has feedback', async ({ page }) => {
   let fail = true;
   await page.route('**/api/v1/courses?*', async (route) => {
