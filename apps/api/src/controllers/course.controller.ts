@@ -31,6 +31,16 @@ export class CourseController {
   progress = async (req: Request, res: Response) => {
     res.json(await this.service.progress(req.actor!.id, String(req.params.id), req.body));
   };
+  caption = async (req: Request, res: Response) => {
+    res.json(
+      await this.storage.caption(
+        req.actor!.id,
+        String(req.params.id),
+        String(req.params.lesson),
+        String(req.params.caption),
+      ),
+    );
+  };
   asset = async (req: Request, res: Response) => {
     res.json(await this.storage.lesson(req.actor!.id, String(req.params.id), String(req.params.lesson)));
   };

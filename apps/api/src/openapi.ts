@@ -39,7 +39,7 @@ const schemas: Record<string, unknown> = {
   }),
   Asset: object({
     name: string,
-    content_type: { type: 'string', enum: ['video/mp4', 'application/pdf', 'image/png', 'image/jpeg'] },
+    content_type: { type: 'string', enum: ['video/mp4', 'application/pdf', 'image/png', 'image/jpeg', 'text/vtt'] },
   }),
   Course: object({
     title: string,
@@ -60,6 +60,20 @@ const schemas: Record<string, unknown> = {
           kind: { enum: ['text', 'video', 'attachment'] },
           content: string,
           asset_key: string,
+          captions: {
+            type: 'array',
+            maxItems: 8,
+            items: object(
+              {
+                id: string,
+                language: string,
+                label: string,
+                asset_key: { type: 'string', pattern: '^media/[a-zA-Z0-9-]+\\.vtt$' },
+                default: { type: 'boolean' },
+              },
+              ['id', 'language', 'label', 'asset_key'],
+            ),
+          },
         },
         ['id', 'title', 'kind', 'content'],
       ),
@@ -142,6 +156,18 @@ schemas.Verification = object({
   cpd: { type: 'object' },
 });
 schemas.SignedUrl = object({ url: string });
+schemas.LessonMedia = object({
+  url: string,
+  captions: {
+    type: 'array',
+    items: object({ id: string, language: string, label: string, url: string, default: { type: 'boolean' } }, [
+      'id',
+      'language',
+      'label',
+      'url',
+    ]),
+  },
+});
 const responseNames: Record<string, string> = {
   '/auth/login': 'AuthResponse',
   '/auth/refresh': 'AuthResponse',
@@ -152,7 +178,8 @@ const responseNames: Record<string, string> = {
   'post /enrollments/{id}/attempts': 'ExamResult',
   '/verify/{id}': 'Verification',
   '/certificates/{id}/download': 'SignedUrl',
-  '/enrollments/{id}/lessons/{lesson}/asset': 'SignedUrl',
+  '/enrollments/{id}/lessons/{lesson}/asset': 'LessonMedia',
+  '/enrollments/{id}/lessons/{lesson}/captions/{caption}': 'SignedUrl',
 };
 type Spec = [string, string, string, string?, boolean?];
 const specs: Spec[] = [
@@ -173,7 +200,8 @@ const specs: Spec[] = [
   ['get', '/enrollments', '已解鎖課程'],
   ['get', '/enrollments/{id}', '教材及不含答案的題目'],
   ['put', '/enrollments/{id}/progress', '儲存續讀位置', 'Progress'],
-  ['get', '/enrollments/{id}/lessons/{lesson}/asset', '授權媒體連結'],
+  ['get', '/enrollments/{id}/lessons/{lesson}/asset', '授權媒體與版本字幕連結'],
+  ['get', '/enrollments/{id}/lessons/{lesson}/captions/{caption}', '依報讀版本取得授權字幕連結'],
   ['post', '/enrollments/{id}/attempts', '提交測驗', 'Exam'],
   ['get', '/enrollments/{id}/attempts', '測驗紀錄'],
   ['get', '/certificates', '我的證書'],

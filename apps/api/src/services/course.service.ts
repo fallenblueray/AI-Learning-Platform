@@ -24,6 +24,23 @@ const lessonSchema = z
     title: z.string().min(1).max(200),
     kind: z.enum(['text', 'video', 'attachment']),
     content: z.string().max(50000),
+    captions: z
+      .array(
+        z
+          .object({
+            id: z.string().regex(/^[a-zA-Z0-9-]{1,64}$/),
+            language: z
+              .string()
+              .regex(/^[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]{2,8})*$/)
+              .max(35),
+            label: z.string().min(1).max(80),
+            asset_key: z.string().regex(/^media\/[a-zA-Z0-9-]+\.vtt$/),
+            default: z.boolean().optional(),
+          })
+          .strict(),
+      )
+      .max(8)
+      .optional(),
     asset_key: z
       .string()
       .regex(/^media\/[a-zA-Z0-9-]+\.(mp4|pdf|png|jpg)$/)
@@ -33,7 +50,16 @@ const lessonSchema = z
     (l) =>
       !l.asset_key || (l.kind === 'text' ? /\.(png|jpg)$/ : l.kind === 'video' ? /\.mp4$/ : /\.pdf$/).test(l.asset_key),
     '教材類型與檔案不符',
-  );
+  )
+  .superRefine((lesson, ctx) => {
+    const tracks = lesson.captions ?? [];
+    if (
+      (tracks.length && lesson.kind !== 'video') ||
+      new Set(tracks.map((t) => t.id)).size !== tracks.length ||
+      tracks.filter((t) => t.default).length > 1
+    )
+      ctx.addIssue({ code: 'custom', message: '字幕只適用於影片；識別不可重複，預設字幕最多一條' });
+  });
 export const courseSchema = z
   .object({
     title: z.string().min(1).max(200),
@@ -246,7 +272,11 @@ export class CourseService {
       ...e.get(),
       content: {
         ...content,
-        lessons: lessons.map(({ asset_key, ...l }) => ({ ...l, has_asset: !!asset_key })),
+        lessons: lessons.map(({ asset_key, captions, ...l }) => ({
+          ...l,
+          has_asset: !!asset_key,
+          captions: captions?.map(({ asset_key: _key, ...track }) => track),
+        })),
         questions: questions.map(({ answer, explanation, ...q }) => q),
       },
       progress: await Progress.findAll({ where: { enrollment_id: id } }),

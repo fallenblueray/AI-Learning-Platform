@@ -44,6 +44,7 @@ export function courseRoutes() {
   r.get('/enrollments/:id', auth, c.learn);
   r.put('/enrollments/:id/progress', auth, body(D.ProgressDto), c.progress);
   r.get('/enrollments/:id/lessons/:lesson/asset', auth, c.asset);
+  r.get('/enrollments/:id/lessons/:lesson/captions/:caption', auth, c.caption);
   r.post('/enrollments/:id/attempts', auth, verified, body(D.ExamDto), c.exam);
   r.get('/enrollments/:id/attempts', auth, c.attempts);
   r.get('/certificates', auth, c.certificates);
@@ -87,7 +88,7 @@ export function adminRoutes() {
   r.post('/assets', body(D.AssetDto), c.upload);
   r.put(
     '/assets/local',
-    raw({ type: ['video/mp4', 'application/pdf', 'image/png', 'image/jpeg'], limit: '250mb' }),
+    raw({ type: ['video/mp4', 'application/pdf', 'image/png', 'image/jpeg', 'text/vtt'], limit: '250mb' }),
     async (req, res) => {
       requireThat(env.STORAGE_DRIVER === 'local', 404, 'NOT_FOUND', '找不到檔案');
       let claim: jwt.JwtPayload;

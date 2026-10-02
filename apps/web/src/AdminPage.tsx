@@ -515,19 +515,49 @@ function CourseEditor({
 }) {
   const set = (key: keyof Content, value: unknown) => onChange({ ...c, [key]: value });
   const [uploading, setUploading] = useState(false);
-  async function upload(index: number, file: File) {
+  async function upload(index: number, file: File, caption = false) {
+    if (caption && (file.size > 1024 * 1024 || !/^\uFEFF?WEBVTT(?:[ \t].*)?(?:\r?\n|$)/.test(await file.text()))) {
+      notify('字幕必須是 1MB 以內的 WebVTT');
+      return;
+    }
+    if (caption && (c.lessons[index].captions?.length ?? 0) >= 8) {
+      notify('每個單元最多八條字幕');
+      return;
+    }
+    const contentType = caption ? 'text/vtt' : file.type;
     if (file.size > 250 * 1024 * 1024) {
       notify('檔案不可大於 250MB');
       return;
     }
     setUploading(true);
     try {
-      const r = await post<{ url: string; key: string }>('/admin/assets', { name: file.name, content_type: file.type });
-      const response = await fetch(r.url, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      const r = await post<{ url: string; key: string }>('/admin/assets', {
+        name: file.name,
+        content_type: contentType,
+      });
+      const response = await fetch(r.url, { method: 'PUT', headers: { 'Content-Type': contentType }, body: file });
       if (!response.ok) throw new Error('上載失敗，請重試');
       set(
         'lessons',
-        c.lessons.map((l, i) => (i === index ? { ...l, asset_key: r.key } : l)),
+        c.lessons.map((l, i) =>
+          i === index
+            ? caption
+              ? {
+                  ...l,
+                  captions: [
+                    ...(l.captions ?? []),
+                    {
+                      id: crypto.randomUUID(),
+                      language: 'zh-Hant',
+                      label: '繁體中文',
+                      asset_key: r.key,
+                      default: !l.captions?.length,
+                    },
+                  ],
+                }
+              : { ...l, asset_key: r.key }
+            : l,
+        ),
       );
       notify('檔案已上載。');
     } catch (e) {
@@ -633,7 +663,9 @@ function CourseEditor({
               onChange={(e) =>
                 set(
                   'lessons',
-                  c.lessons.map((v, n) => (n === i ? { ...v, kind: e.target.value } : v)),
+                  c.lessons.map((v, n) =>
+                    n === i ? { ...v, kind: e.target.value, asset_key: undefined, captions: undefined } : v,
+                  ),
                 )
               }
             >
@@ -655,6 +687,107 @@ function CourseEditor({
               }
             />
           </label>
+          {l.kind === 'video' && (
+            <fieldset>
+              <legend>字幕（隨課程版本保存）</legend>
+              {(l.captions ?? []).map((track, trackIndex) => (
+                <div key={track.id} className="caption-editor">
+                  <label>
+                    語言代碼
+                    <input
+                      aria-label={`字幕 ${trackIndex + 1} 語言代碼`}
+                      value={track.language}
+                      onChange={(event) =>
+                        set(
+                          'lessons',
+                          c.lessons.map((lesson, n) =>
+                            n === i
+                              ? {
+                                  ...lesson,
+                                  captions: lesson.captions?.map((t) =>
+                                    t.id === track.id ? { ...t, language: event.target.value } : t,
+                                  ),
+                                }
+                              : lesson,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label>
+                    字幕名稱
+                    <input
+                      aria-label={`字幕 ${trackIndex + 1} 名稱`}
+                      value={track.label}
+                      onChange={(event) =>
+                        set(
+                          'lessons',
+                          c.lessons.map((lesson, n) =>
+                            n === i
+                              ? {
+                                  ...lesson,
+                                  captions: lesson.captions?.map((t) =>
+                                    t.id === track.id ? { ...t, label: event.target.value } : t,
+                                  ),
+                                }
+                              : lesson,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={!!track.default}
+                      onChange={(event) =>
+                        set(
+                          'lessons',
+                          c.lessons.map((lesson, n) =>
+                            n === i
+                              ? {
+                                  ...lesson,
+                                  captions: lesson.captions?.map((t) => ({
+                                    ...t,
+                                    default: event.target.checked && t.id === track.id,
+                                  })),
+                                }
+                              : lesson,
+                          ),
+                        )
+                      }
+                    />
+                    預設顯示
+                  </label>
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() =>
+                      set(
+                        'lessons',
+                        c.lessons.map((lesson, n) =>
+                          n === i ? { ...lesson, captions: lesson.captions?.filter((t) => t.id !== track.id) } : lesson,
+                        ),
+                      )
+                    }
+                  >
+                    移除此字幕
+                  </button>
+                </div>
+              ))}
+              <label className="upload-label">
+                新增 WebVTT 字幕（上限 1MB）
+                <input
+                  type="file"
+                  accept=".vtt,text/vtt"
+                  disabled={uploading || (l.captions?.length ?? 0) >= 8}
+                  onChange={(event) => {
+                    if (event.target.files?.[0]) void upload(i, event.target.files[0], true);
+                  }}
+                />
+              </label>
+            </fieldset>
+          )}
           {
             <label className="upload-label">
               <Upload size={17} />

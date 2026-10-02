@@ -394,3 +394,125 @@ test('signed Stripe webhook grants once and tampered raw body is rejected', asyn
     env.STRIPE_WEBHOOK_SECRET = originalSecret;
   }
 });
+
+test('real HTTP login, MFA and logout revoke all private fixture media requests', async () => {
+  const fs = await import('node:fs/promises');
+  const { createHash } = await import('node:crypto');
+  const { PRIVATE_MEDIA_ROOT, firstLessonAssets } = await import('../src/routes/first-lesson-media');
+  await fs.mkdir(PRIVATE_MEDIA_ROOT, { recursive: true });
+  const directory = await fs.mkdtemp(`${PRIVATE_MEDIA_ROOT}/http-fixture-`);
+  try {
+    const assets = structuredClone(firstLessonAssets);
+    for (const item of Object.values(assets)) {
+      const bytes = Buffer.from(
+        item.mime === 'text/vtt' ? 'WEBVTT\n\n00:00.000 --> 00:01.000\n測試字幕\n' : '0123456789abcdef',
+      );
+      item.bytes = bytes.length;
+      item.sha256 = createHash('sha256').update(bytes).digest('hex');
+      await fs.writeFile(`${directory}/${item.file}`, bytes);
+    }
+    const reviewApp = createApp({ enabled: true, directory, assets });
+    const u = await user();
+    await u.update({ role: 'admin' });
+    const agent = request.agent(reviewApp);
+    await agent.post('/api/v1/auth/login').set('Origin', env.APP_URL).send({ email: u.email, password }).expect(200);
+    await agent.get('/api/v1/first-lesson-media/v1/video').expect(403);
+    const setup = await agent.post('/api/v1/auth/mfa/setup').set('Origin', env.APP_URL).send({}).expect(200);
+    const confirmed = await agent
+      .post('/api/v1/auth/mfa/confirm')
+      .set('Origin', env.APP_URL)
+      .send({ code: totp(setup.body.secret) })
+      .expect(200);
+    const cookieHeaders = confirmed.headers['set-cookie'] as unknown as string[];
+    const accessCookie = cookieHeaders.find((c) => c.startsWith('access_token='))!.split(';')[0];
+    await agent.get('/api/v1/first-lesson-media/v1').expect(200);
+    await agent.get('/api/v1/first-lesson-media/v1/video').set('Range', 'bytes=0-3').expect(206);
+    await agent.head('/api/v1/first-lesson-media/v1/captions').expect(200);
+    await agent.post('/api/v1/auth/logout').set('Origin', env.APP_URL).send({}).expect(200);
+    for (const kind of ['', '/video', '/captions', '/poster', '/chapters']) {
+      await request(reviewApp)
+        .get('/api/v1/first-lesson-media/v1' + kind)
+        .set('Cookie', accessCookie)
+        .set('Range', 'bytes=0-3')
+        .expect(401);
+      await request(reviewApp)
+        .head('/api/v1/first-lesson-media/v1' + kind)
+        .set('Cookie', accessCookie)
+        .expect(401);
+    }
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('captions use owned immutable enrollment version and the same expiring asset contract as video', async () => {
+  const { StorageService } = await import('../src/services/storage.service');
+  const jwt = await import('jsonwebtoken');
+  const storage = Container.get(StorageService);
+  const u = await user(),
+    other = await user(),
+    c = await course();
+  const oldKey = `media/${randomUUID()}.vtt`,
+    newKey = `media/${randomUUID()}.vtt`;
+  const oldContent = structuredClone(c.content);
+  oldContent.lessons[0] = {
+    ...oldContent.lessons[0],
+    kind: 'video',
+    asset_key: `media/${randomUUID()}.mp4`,
+    captions: [{ id: 'zh', language: 'zh-Hant', label: '繁體中文', asset_key: oldKey, default: true }],
+  };
+  await Version.update({ content: oldContent }, { where: { id: c.vid } });
+  await storage.put(oldKey, Buffer.from('WEBVTT\n\n00:00.000 --> 00:01.000\n舊版字幕\n'), 'text/vtt');
+  await storage.put(newKey, Buffer.from('WEBVTT\n\n00:00.000 --> 00:01.000\n新版字幕\n'), 'text/vtt');
+  await assert.rejects(storage.put(`media/${randomUUID()}.vtt`, Buffer.from('<script>wrong</script>'), 'text/vtt'));
+  const enrolled = await cs.unlock(u.id, c.id, 'free');
+  const updated = structuredClone(oldContent);
+  updated.lessons[0].captions![0].asset_key = newKey;
+  await Course.update({ draft: updated }, { where: { id: c.id } });
+  await cs.publish(u.id, c.id);
+  const endpoint = `/api/v1/enrollments/${enrolled.id}/lessons/${oldContent.lessons[0].id}`;
+  await request(app)
+    .get(endpoint + '/captions/zh')
+    .expect(401);
+  await request(app)
+    .get(endpoint + '/captions/zh')
+    .set('Cookie', await cookie(other.id))
+    .expect(404);
+  const authCookie = await cookie(u.id);
+  const metadata = await request(app).get(`/api/v1/enrollments/${enrolled.id}`).set('Cookie', authCookie).expect(200);
+  assert.equal(metadata.body.content.lessons[0].captions[0].asset_key, undefined);
+  const media = await request(app)
+    .get(endpoint + '/asset')
+    .set('Cookie', authCookie)
+    .expect(200);
+  assert.equal(media.body.captions.length, 1);
+  const subtitle = await request(app)
+    .get(endpoint + '/captions/zh')
+    .set('Cookie', authCookie)
+    .expect(200);
+  const token = new URL(subtitle.body.url, env.APP_URL).searchParams.get('token')!;
+  const claim = jwt.default.verify(token, env.JWT_SECRET, {
+    algorithms: ['HS256'],
+    audience: 'pt-asset',
+    issuer: 'pt-academy',
+  }) as import('jsonwebtoken').JwtPayload;
+  assert.equal(claim.key, oldKey);
+  assert.equal(claim.exp! - claim.iat!, 300);
+  const data = await request(app)
+    .get(subtitle.body.url)
+    .expect(200)
+    .expect('Content-Type', /text\/vtt/);
+  assert.match(data.text, /舊版字幕/);
+  await request(app)
+    .get(endpoint + '/captions/unknown')
+    .set('Cookie', authCookie)
+    .expect(404);
+  const expired = jwt.default.sign({ key: oldKey, kind: 'asset' }, env.JWT_SECRET, {
+    expiresIn: -1,
+    audience: 'pt-asset',
+    issuer: 'pt-academy',
+  });
+  await request(app)
+    .get('/api/v1/assets/local?token=' + expired)
+    .expect(403);
+});

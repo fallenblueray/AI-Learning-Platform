@@ -14,7 +14,7 @@ import { StorageService } from './services/storage.service';
 import { requireThat } from './exceptions/http.exception';
 import { firstLessonMediaRoutes } from './routes/first-lesson-media';
 import { openapi } from './openapi';
-export function createApp() {
+export function createApp(mediaReview?: Omit<Parameters<typeof firstLessonMediaRoutes>[0], 'production'>) {
   const app = express();
   const assetOrigins = env.S3_CSP_ORIGIN ? [env.S3_CSP_ORIGIN] : [];
   app.disable('x-powered-by');
@@ -82,8 +82,7 @@ export function createApp() {
   app.use(
     '/api/v1/first-lesson-media',
     firstLessonMediaRoutes({
-      enabled: env.FIRST_LESSON_PREVIEW_ENABLED,
-      directory: env.FIRST_LESSON_PREVIEW_DIR,
+      ...(mediaReview ?? { enabled: env.FIRST_LESSON_PREVIEW_ENABLED, directory: env.FIRST_LESSON_PREVIEW_DIR }),
       production: env.NODE_ENV === 'production',
     }),
   );

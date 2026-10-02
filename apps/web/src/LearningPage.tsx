@@ -2,6 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2, FileText, PlayCircle, Trophy, Award, Download } from 'lucide-react';
 import { api, post, levelNames } from './api';
 import type { Learning } from './types';
+interface CaptionTrack {
+  id: string;
+  language: string;
+  label: string;
+  url: string;
+  default?: boolean;
+}
+interface MediaResponse {
+  url: string;
+  captions?: CaptionTrack[];
+}
 interface Result {
   score: number;
   passed: boolean;
@@ -26,6 +37,9 @@ export function LearningPage({
     [result, setResult] = useState<Result | null>(null),
     [busy, setBusy] = useState(false),
     [asset, setAsset] = useState(''),
+    [captions, setCaptions] = useState<CaptionTrack[]>([]),
+    [captionId, setCaptionId] = useState('off'),
+    [mediaRevision, setMediaRevision] = useState(0),
     [error, setError] = useState('');
   const video = useRef<HTMLVideoElement | null>(null),
     lastSaved = useRef(0);
@@ -52,11 +66,17 @@ export function LearningPage({
   useEffect(() => {
     let active = true;
     setAsset('');
+    setCaptions([]);
+    setCaptionId('off');
     lastSaved.current = 0;
     if (lesson?.has_asset)
-      api<{ url: string }>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
+      api<MediaResponse>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
         .then((r) => {
-          if (active) setAsset(r.url);
+          if (active) {
+            setAsset(r.url);
+            setCaptions(r.captions ?? []);
+            setCaptionId(r.captions?.find((t) => t.default)?.id ?? 'off');
+          }
         })
         .catch((e) => {
           if (active) notify(e.message);
@@ -65,6 +85,23 @@ export function LearningPage({
       active = false;
     };
   }, [id, lesson?.id, lesson?.has_asset, notify]);
+  useEffect(() => {
+    const tracks = video.current?.textTracks;
+    if (tracks)
+      Array.from(tracks).forEach((track, index) => {
+        track.mode = captions[index]?.id === captionId ? 'showing' : 'disabled';
+      });
+  }, [captionId, captions, asset, mediaRevision]);
+  useEffect(() => {
+    const tracks = video.current?.textTracks;
+    const sync = () => {
+      if (!tracks) return;
+      const index = Array.from(tracks).findIndex((track) => track.mode === 'showing');
+      setCaptionId(captions[index]?.id ?? 'off');
+    };
+    tracks?.addEventListener('change', sync);
+    return () => tracks?.removeEventListener('change', sync);
+  }, [captions, asset, mediaRevision]);
   async function save(read: boolean, position = 0) {
     if (!lesson) return;
     try {
@@ -244,11 +281,12 @@ export function LearningPage({
                 <h2>{lesson.title}</h2>
                 {lesson.kind === 'video' && asset && (
                   <video
-                    key={lesson.id}
+                    key={`${lesson.id}:${mediaRevision}`}
                     ref={video}
                     controls
                     playsInline
                     preload="metadata"
+                    crossOrigin="anonymous"
                     src={asset}
                     onLoadedMetadata={() => {
                       if (video.current)
@@ -263,7 +301,35 @@ export function LearningPage({
                         void save(false, event.currentTarget.currentTime);
                       }
                     }}
-                  />
+                  >
+                    {captions.map((track) => (
+                      <track
+                        key={track.id}
+                        kind="captions"
+                        src={track.url}
+                        srcLang={track.language}
+                        label={track.label}
+                        onError={() => notify('字幕未能載入，請重新載入教材。')}
+                      />
+                    ))}
+                  </video>
+                )}
+                {lesson.kind === 'video' && captions.length > 0 && (
+                  <label>
+                    字幕
+                    <select
+                      aria-label="選擇字幕"
+                      value={captionId}
+                      onChange={(event) => setCaptionId(event.target.value)}
+                    >
+                      <option value="off">關閉字幕</option>
+                      {captions.map((track) => (
+                        <option key={track.id} value={track.id}>
+                          {track.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 )}
                 {lesson.kind === 'video' && !asset && (
                   <div className="lesson-unavailable">
@@ -281,8 +347,13 @@ export function LearningPage({
                   <button
                     className="text-button"
                     onClick={() =>
-                      api<{ url: string }>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
-                        .then((r) => setAsset(r.url))
+                      api<MediaResponse>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
+                        .then((r) => {
+                          setAsset(r.url);
+                          setCaptions(r.captions ?? []);
+                          setCaptionId(r.captions?.find((t) => t.id === captionId)?.id ?? 'off');
+                          setMediaRevision((value) => value + 1);
+                        })
                         .catch((e) => notify(e.message))
                     }
                   >

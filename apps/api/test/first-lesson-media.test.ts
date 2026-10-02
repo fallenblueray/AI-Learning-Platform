@@ -7,11 +7,12 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { firstLessonAssets, firstLessonMediaRoutes } from '../src/routes/first-lesson-media';
+import { firstLessonAssets, firstLessonMediaRoutes, PRIVATE_MEDIA_ROOT } from '../src/routes/first-lesson-media';
 import { errors } from '../src/middlewares/http';
 
 test('private first-lesson review denies guests, learners, missing MFA, disabled and production; verifies bytes and supports ranges', async () => {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'lesson-media-test-'));
+  await fs.mkdir(PRIVATE_MEDIA_ROOT, { recursive: true });
+  const directory = await fs.mkdtemp(path.join(PRIVATE_MEDIA_ROOT, 'qa-fixture-'));
   try {
     const assets = structuredClone(firstLessonAssets);
     for (const asset of Object.values(assets)) {
@@ -22,13 +23,13 @@ test('private first-lesson review denies guests, learners, missing MFA, disabled
       asset.bytes = data.length;
       asset.sha256 = createHash('sha256').update(data).digest('hex');
     }
-    function app(role = '', mfa = false, enabled = true, production = false) {
+    function app(role = '', mfa = false, enabled = true, production = false, overrideDirectory = directory) {
       const app = express();
       app.use((req, _res, next) => {
         if (role) req.actor = { id: 'fixture', role, mfa, verified: true, demo_access: false };
         next();
       });
-      app.use('/media', firstLessonMediaRoutes({ enabled, production, directory, assets }));
+      app.use('/media', firstLessonMediaRoutes({ enabled, production, directory: overrideDirectory, assets }));
       app.use(errors);
       return app;
     }
@@ -49,6 +50,41 @@ test('private first-lesson review denies guests, learners, missing MFA, disabled
         .get('/media' + endpoint)
         .expect(404);
     }
+    for (const verb of ['get', 'head'] as const) {
+      await request(app())[verb]('/media/v1/video').set('Range', 'bytes=0-3').expect(401);
+      await request(app('student', true))[verb]('/media/v1/captions').set('Range', 'bytes=0-3').expect(403);
+      await request(app('admin'))[verb]('/media/v1/video').expect(403);
+    }
+    const originalHash = assets.poster.sha256;
+    assets.poster.sha256 = '';
+    await request(app('admin', true)).get('/media/v1').expect(503);
+    assets.poster.sha256 = '0'.repeat(64);
+    await request(app('admin', true)).get('/media/v1/poster').expect(503);
+    assets.poster.sha256 = originalHash;
+    await request(app('admin', true, true, false, os.tmpdir()))
+      .get('/media/v1')
+      .expect(503);
+    await request(app('admin', true, true, false, '/workspace/AI-Learning-Platform/apps/web/public'))
+      .get('/media/v1')
+      .expect(503);
+    await request(app('admin', true, true, false, directory + '/../' + path.basename(directory)))
+      .get('/media/v1')
+      .expect(503);
+    const alias = directory + '-alias';
+    await fs.symlink(directory, alias);
+    try {
+      await request(app('admin', true, true, false, alias))
+        .get('/media/v1')
+        .expect(503);
+    } finally {
+      await fs.unlink(alias);
+    }
+    const poster = path.join(directory, assets.poster.file);
+    await fs.unlink(poster);
+    await fs.symlink(path.join(directory, assets.video.file), poster);
+    await request(app('admin', true)).get('/media/v1/poster').expect(503);
+    await fs.unlink(poster);
+    await fs.writeFile(poster, '0123456789abcdef');
     const allowed = app('admin', true);
     const meta = await request(allowed).get('/media/v1').expect(200);
     assert.equal(meta.body.access, 'admin-mfa-preview');
