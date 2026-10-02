@@ -1,0 +1,143 @@
+import { test, expect } from '@playwright/test';
+import fs from 'node:fs/promises';
+import { firstLessonMedia } from '../../apps/web/src/firstLesson';
+
+test('home, first workshop and browser back remain usable without an account', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('你有想法');
+  await page.getByRole('button', { name: '從第一課開始', exact: true }).click();
+  await expect(page).toHaveURL(/page=first-lesson/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('AI新手不用怕');
+  if (firstLessonMedia.video) {
+    await expect(page.locator('video')).toHaveAttribute('src', firstLessonMedia.video);
+    if (firstLessonMedia.captions)
+      await expect(page.locator('track[kind="captions"]')).toHaveAttribute('src', firstLessonMedia.captions);
+  } else {
+    await expect(page.getByText('配音影片與繁體中文字幕製作中。')).toBeVisible();
+    await expect(page.locator('video')).toHaveCount(0);
+  }
+  await page.goBack();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('你有想法');
+  expect(errors).toEqual([]);
+});
+
+test('share card exports real 1080 PNGs in all three colors and handles empty/long text', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/?page=first-lesson');
+  const title = page.getByLabel('卡片標題', { exact: false });
+  await title.fill('');
+  await page.getByRole('button', { name: '下載我的分享卡' }).click();
+  await expect(page.getByText('請先填寫標題，再下載分享卡。')).toBeVisible();
+  await expect(title).toBeFocused();
+  await title.fill('這是我的第一個原創分享卡工具把好奇變成作品也把每一次測試變成進步讓想法一步一步成真繼續探索新可能');
+  expect((await title.inputValue()).length).toBe(48);
+  await page.getByRole('textbox', { name: '作者 選填' }).fill('');
+  for (const [label, color] of [
+    ['海軍藍', [21, 43, 70]],
+    ['薄荷綠', [200, 237, 223]],
+    ['暖橙', [247, 176, 119]],
+  ] as const) {
+    await page.getByLabel(label, { exact: true }).check();
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: '下載我的分享卡' }).click();
+    const download = await downloadPromise;
+    const file = testInfo.outputPath(`share-card-${label}.png`);
+    await download.saveAs(file);
+    const buffer = await fs.readFile(file);
+    expect(buffer.subarray(1, 4).toString()).toBe('PNG');
+    expect(buffer.readUInt32BE(16)).toBe(1080);
+    expect(buffer.readUInt32BE(20)).toBe(1080);
+    const sample = await page.evaluate(
+      async (src) => {
+        const img = new Image();
+        img.src = src;
+        await img.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1080;
+        const context = canvas.getContext('2d')!;
+        context.drawImage(img, 0, 0);
+        return Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3);
+      },
+      `data:image/png;base64,${buffer.toString('base64')}`,
+    );
+    expect(sample).toEqual(color);
+    await testInfo.attach(`1080 PNG ${label}`, { path: file, contentType: 'image/png' });
+  }
+  await page.getByRole('textbox', { name: '作者 選填' }).fill('測試作者');
+  await expect(page.locator('.share-tool .artwork-bottom')).toContainText('測試作者');
+});
+
+test('workshop steps, copy prompt and self-check work without mutating LMS', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const writes: string[] = [];
+  page.on('request', (request) => {
+    if (
+      /\/api\/v1\/(enrollments|courses|checkout|orders|wallet)/.test(request.url()) &&
+      !['GET', 'HEAD'].includes(request.method())
+    )
+      writes.push(request.url());
+  });
+  await page.goto('/?page=first-lesson');
+  for (let step = 0; step < 4; step++) await page.getByRole('button', { name: '完成這一步，繼續' }).click();
+  await page.getByRole('button', { name: '記下這一步' }).click();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '5');
+  await page.getByRole('button', { name: '複製完整提示' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('1080 × 1080');
+  for (const [question, answer] of [1, 2, 2].entries())
+    await page.locator(`input[name="review-${question}"]`).nth(answer).check();
+  await page.getByRole('button', { name: '查看自我檢查結果' }).click();
+  await expect(page.getByText('你已掌握這次練習的重點！記得下載你的作品。')).toBeVisible();
+  expect(writes).toEqual([]);
+});
+
+test('mobile navigation, keyboard modal and responsive layouts', async ({ page }) => {
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ['home', 'catalog', 'first-lesson', 'learning']) {
+      await page.goto(`/?page=${route}`);
+      await expect(page.locator('main')).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+        `${route} width ${width}`,
+      ).toBe(true);
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: '開啟選單' }).click();
+  await expect(page.locator('.sidebar')).toHaveClass(/open/);
+  await page.locator('.sidebar').getByRole('button', { name: '探索課程', exact: true }).click();
+  await expect(page.locator('.sidebar')).not.toHaveClass(/open/);
+  await page.locator('.mobile-bottom-nav').getByRole('button', { name: '我的學習', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '登入，繼續你的學習旅程。' })).toBeVisible();
+  await page.locator('.top-actions').getByRole('button', { name: '登入 / 註冊' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Shift+Tab');
+  expect(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.top-actions').getByRole('button', { name: '登入 / 註冊' })).toBeFocused();
+});
+
+test('catalog fetch failures offer a working retry and empty search has feedback', async ({ page }) => {
+  let fail = true;
+  await page.route('**/api/v1/courses?*', async (route) => {
+    if (fail)
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: '測試暫時未能載入' }),
+      });
+    else await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ items: [] }) });
+  });
+  await page.goto('/?page=catalog');
+  await expect(page.getByRole('heading', { name: '課程暫時未能載入' })).toBeVisible();
+  fail = false;
+  await page.getByRole('button', { name: '重新載入課程' }).click();
+  await expect(page.getByRole('heading', { name: '下一段學習旅程，準備中。' })).toBeVisible();
+  await page.getByLabel('搜尋課程').fill('沒有這門課');
+  await expect(page.getByRole('button', { name: '查看首課：分享卡小工具' })).toHaveCount(0);
+});

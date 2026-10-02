@@ -30,14 +30,29 @@ export function LearningPage({
   const video = useRef<HTMLVideoElement | null>(null),
     lastSaved = useRef(0);
   useEffect(() => {
+    let active = true;
+    setData(null);
+    setError('');
+    setLessonIndex(0);
+    setExam(false);
+    setResult(null);
+    setAnswers({});
     api<Learning>(`/enrollments/${id}`)
-      .then(setData)
-      .catch((e) => setError(e.message));
+      .then((value) => {
+        if (active) setData(value);
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
+    return () => {
+      active = false;
+    };
   }, [id]);
   const lesson = data?.content.lessons[lessonIndex];
   useEffect(() => {
     let active = true;
     setAsset('');
+    lastSaved.current = 0;
     if (lesson?.has_asset)
       api<{ url: string }>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
         .then((r) => {
@@ -72,6 +87,7 @@ export function LearningPage({
             }
           : old,
       );
+      if (read) notify('已記下你的學習進度。');
     } catch (e) {
       notify((e as Error).message);
     }
@@ -107,6 +123,12 @@ export function LearningPage({
       <div className="lesson-heading">
         <span className="eyebrow">{levelNames[data.content.level]} · 自主學習</span>
         <h1>{data.content.title}</h1>
+      </div>
+      <div className="lesson-progress-banner">
+        <span>你的學習紀錄</span>
+        <strong>
+          {data.progress.filter((p) => p.read).length} / {data.content.lessons.length} 個單元已閱讀
+        </strong>
       </div>
       <div className="learning-layout">
         <aside className="lesson-nav">
@@ -225,6 +247,8 @@ export function LearningPage({
                     key={lesson.id}
                     ref={video}
                     controls
+                    playsInline
+                    preload="metadata"
                     src={asset}
                     onLoadedMetadata={() => {
                       if (video.current)
@@ -240,6 +264,17 @@ export function LearningPage({
                       }
                     }}
                   />
+                )}
+                {lesson.kind === 'video' && !asset && (
+                  <div className="lesson-unavailable">
+                    <PlayCircle size={38} />
+                    <h3>{lesson.has_asset ? '正在準備影片' : '影片尚未加入'}</h3>
+                    <p>
+                      {lesson.has_asset
+                        ? '若未能載入，可按下方按鈕重新取得教材。'
+                        : '你可先閱讀文字教材；影片就緒後由課程管理員更新。'}
+                    </p>
+                  </div>
                 )}
                 {lesson.kind === 'text' && asset && <img className="lesson-image" src={asset} alt={lesson.title} />}
                 {lesson.has_asset && (
@@ -270,7 +305,6 @@ export function LearningPage({
                     className="button secondary"
                     onClick={() => {
                       void save(true, video.current?.currentTime || 0);
-                      notify('已記下你的學習進度。');
                     }}
                   >
                     <CheckCircle2 size={17} />

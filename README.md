@@ -1,6 +1,14 @@
-# 創科學苑 / Innovate Academy · 香港醫護 AI 學習平台
+# 創科學苑 / Innovate Academy
 
-供香港物理治療師學習使用 AI 的繁體中文 MVP。React / Vite 前端、Express / TypeScript / Sequelize 後端、MySQL 資料庫；課程影片、圖片、講義及證書使用私有物件儲存。
+面向零程式背景、想用 AI 做小工具及探索創業的人。以短課、清楚步驟及實際作品建立信心，不承諾固定完成時間或收入。繁體中文介面；React / Vite 前端、Express / TypeScript / Sequelize 後端、MySQL 資料庫。
+
+## 2026-10 介面改版
+
+- 全新首頁、獨立課程探索、課程詳情、學習頁、帳戶介面及手機底部導覽。
+- 公開首課「AI新手不用怕！跟著做出你的第一個小工具」：五步教材、完整提示、三題自我檢查，附原創分享卡工具（標題、可選作者、三色、1080 × 1080 PNG）。入口：`/?page=first-lesson`。
+- **配音影片與同步字幕仍待製作交付**。播放器、繁中 WebVTT、封面與載入失敗處理已準備；沒有假影片連結。接入規格見 [改版與媒體交付](docs/academy-redesign.md)。
+- 首課公開練習不建立報讀、不消耗免費名額、不發證；本頁練習進度僅存在記憶體。正式平台課程繼續使用原 LMS 權限、不可變版本及測驗發證。
+- 不更改收費規則、資料庫 schema、已發布課程、MFA 或支付服務；沒有部署或啟用正式付款。舊示範課保留作原有流程驗收。
 
 ## 已實作
 
@@ -12,7 +20,7 @@
 - 課程草稿／不可變發布版本、題庫、MP4／PNG／JPEG／PDF 上載、點數套裝及營運後台。
 - 持久化背景工作、失敗重試、稽核紀錄、版本化 SQL migrations、Docker、CI、DigitalOcean Terraform 設定及備份／還原腳本。
 
-**這不是已上線收費服務。** 正式雲端帳戶、域名、商戶及郵件憑證尚未提供，因此外部服務尚未實際啟用。三門示範課是未公開、不可出售的測試教材；正式課程、售價、條款及 CPD 認可須由營運方提供。
+**這不是已驗收的正式收費服務。** 三門舊示範課是未公開、不可出售的測試教材。正式課程、售價及條款須由營運方確認；完成證書不代表正式 CPD 認證。既有部署設定保留，本次改版只在隔離本機環境驗證，不代表外部服務已驗收。
 
 ## 本機開始
 
@@ -82,6 +90,8 @@ E2E_EMAIL=learner@example.org E2E_PASSWORD='<密碼>' npm run test:e2e
 
 預設使用已安裝的 Chrome；亦可 `npx playwright install chromium` 後調整設定使用 Playwright Chromium。瀏覽器測試只改動該測試學員的免費名額、進度及證書。
 
+若使用已安裝的 Chromium，可設定 `E2E_EXECUTABLE_PATH=/usr/bin/chromium`。新增公開首課測試不需帳戶；原 LMS 與帳戶測試需要隔離受邀學員，並會暫時修改再還原其姓名。真實瀏覽器截圖可用相同環境變數執行 `node scripts/capture-academy.mjs`，輸出至 Git 忽略的 `.local/qa/`。請勿提供正式環境帳戶。
+
 ## 介面與文件
 
 - OpenAPI：`GET /api/v1/openapi.json`。
@@ -91,9 +101,10 @@ E2E_EMAIL=learner@example.org E2E_PASSWORD='<密碼>' npm run test:e2e
 - [騰訊 Lighthouse、Cloudflare Tunnel、COS 與同機 MySQL 部署](docs/tencent-lighthouse-deployment.md)
 - [本次驗收紀錄及未完成的外部驗收](docs/verification.md)
 - [下一階段：雲端試行環境](docs/next-step.md)
+- [創科學苑改版、首課媒體接入與本次驗收](docs/academy-redesign.md)
 
 ## 首版邊界
 
-平台不接駁 AI 模型 API，不核驗 PT 執業資格，不提供正式課程內容或自動 CPD 申報。CPD 資料保留獨立欄位；首版後台僅可設定「未認可／申請中」，證書不授予正式學分。認可後須按核准要求另行實作及驗收，不會追溯改寫舊證書。
+平台不接駁 AI 模型 API；首課提示由學員自行貼到選用的 AI 工具，不傳送分享卡輸入到伺服器。既有 CPD 欄位保留供相容性使用，後台僅可設定「未認可／申請中」，證書不授予正式學分。本次定位以一般 AI 實作為主，不核驗專業資格或自動申報 CPD。
 
 沒有機構帳戶、訂閱制、雙語介面或自動部分退款。單機 API 是試行配置，不承諾高可用。證書、電郵、Stripe 與雲端營運的真實服務驗收均須於正式上線前完成。
