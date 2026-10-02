@@ -45,6 +45,7 @@
 
 環境：Node 24.19.0、npm 11.9.0、MySQL 8.4.11（`127.0.0.1:3307/pt_academy_test`）、系統 Chromium。所有帳戶及資料均屬隔離測試環境。
 
+- GitHub [CI #15](https://github.com/fallenblueray/AI-Learning-Platform/actions/runs/37043891832) 在程式提交 `29014d13eb9a5c7e42ad3949e44bc462281345b2` 通過：安裝、型別、建置、單元、MySQL 整合及 `npm audit --audit-level=high`。本文件的後續提交只補上此驗收記錄。
 - `npm run typecheck` 通過。
 - `npm run build` 通過（API TypeScript 與 Vite production bundle）。
 - `npm test`：5/5 通過。
@@ -68,6 +69,6 @@
 - 最終配音影片、正式字幕同步：素材未交付。
 - 真實 Stripe sandbox 外部結帳、webhook、退款；實際 S3/COS、郵件投遞及正式域名：沒有使用外部服務憑證。通過的支付測試是隔離 fixture，不能當成商戶端驗收。
 - 正式發布課程、定價、條款與首課轉入 LMS：沒有自行更動；公開練習與正式報讀分開。
-- 實機 iOS Safari／Android、遠端 CI、正式部署：本機 Chromium 不等同這些環境。
+- 實機 iOS Safari／Android、正式部署：本機 Chromium 不等同這些環境。
 
 `.local/qa/` 含測試環境截圖、PNG 與記錄，不提交測試密碼或私人資料。既有 `docs/verification.md` 為歷史驗收，未把其結果冒充本次實測。
