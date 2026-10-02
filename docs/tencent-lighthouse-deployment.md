@@ -11,16 +11,16 @@ Cloudflare 已建立遠端管理的 `innovate-academy-production` Tunnel，路�
 - Ubuntu 22.04 或 24.04 LTS x86_64；2 vCPU、4 GB RAM 可供 50–100 人試行。
 - Lighthouse 防火牆只開管理用 SSH 來源；毋須開 80、443、3306。
 - 出站須允許 TCP 443，以及 TCP／UDP 7844 供 Cloudflare Tunnel 使用。
-- 執行 `sudo deploy/tencent/bootstrap-ubuntu.sh` 安裝 Docker、Compose、AWS CLI、自動安全更新及 2 GB swap。
+- 全新主機可執行 `sudo deploy/tencent/bootstrap-ubuntu.sh` 安裝 Docker、Compose、AWS CLI、自動安全更新及 2 GB swap。已有其他服務的共用主機須先檢查現有設定，只安裝缺少的依賴，避免重設 Docker 或影響既有服務。
 
 ## COS 設定
 
-在新加坡區建立兩個私人 bucket：一個保存 `media/` 及 `certificates/`，另一個保存 `mysql/daily/`。名稱須包含騰訊 AppID。禁止公共讀取；API 透過五分鐘簽署網址下載，管理員透過十五分鐘簽署網址上載。
+教材及證書 bucket 設於新加坡，保存 `media/` 及 `certificates/`；異地備份 bucket 設於香港，保存 `mysql/daily/` 及 `mysql/monthly/`。名稱須包含騰訊 AppID。禁止公共讀取；API 透過五分鐘簽署網址下載，管理員透過十五分鐘簽署網址上載。私隱文件須披露新加坡的應用資料及香港的備份資料。
 
 建立兩個 CAM 子使用者／API key：
 
-1. 執行時 key 只可對應用 bucket 列出及讀寫物件，包含 multipart upload 所需操作。
-2. 備份 key 只可對備份 bucket 的 `mysql/daily/*` 列出、上載及讀取；還原演練需要讀取權限。不要給 bucket 刪除、ACL、政策或其他雲端產品權限。
+1. 執行時 key 只可對應用 bucket 的 `media/*` 及 `certificates/*` 讀寫物件；目前應用使用單一 PUT 上載，毋須列出整個 bucket 或刪除物件。
+2. 備份 key 只可對備份 bucket 的 `mysql/daily/*` 及 `mysql/monthly/*` 列出、上載及讀取；還原演練需要讀取權限。不要給 bucket 刪除、ACL、政策或其他雲端產品權限。
 
 可從 `cos-runtime-policy.example.json` 及 `cos-backup-policy.example.json` 建立自訂 CAM 政策，將 `REPLACE_APPID` 及 bucket 名稱換成實際值。應用 key 不含刪除權限，避免程式錯誤刪除教材或證書；資料保留由 COS 生命週期處理。
 
@@ -35,6 +35,8 @@ S3_CSP_ORIGIN=https://*.cos.ap-singapore.myqcloud.com
 ```
 
 應用 bucket 另設 CORS：只允許 `https://innovateacademy.net`，methods 為 `GET`、`HEAD`、`PUT`，allowed headers 至少包含 `Content-Type`、`x-amz-*`，expose header 為 `ETag`，max age 為 600 秒。此設定供管理員直接上載私人教材；bucket 本身仍保持 private。
+
+備份環境檔使用香港端點 `https://cos.ap-hongkong.myqcloud.com` 及 `S3_REGION=ap-hongkong`，與應用環境檔分開。
 
 ## 首次部署
 
@@ -56,7 +58,7 @@ sudo ./deploy.sh
 sudo ./install-backup-timer.sh
 ```
 
-`deploy.sh` 會建置容器、先執行 migration、啟動服務，再從 web 容器驗證 API readiness。備份安裝程序會立即執行一次並啟用每日香港時間 03:20 的 timer。
+`deploy.sh` 會建置容器、等待 MySQL 就緒、執行 migration、啟動服務，再從 web 容器驗證 API readiness。備份安裝程序會立即執行一次並啟用每日香港時間 03:20 的 timer；每月第一日額外上載一份每月備份。
 
 建立首位管理員時透過一次性環境變數傳入帳戶資料，執行後清除 shell history 或使用 root-only 暫存檔：
 

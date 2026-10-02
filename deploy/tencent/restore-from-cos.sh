@@ -16,7 +16,9 @@ AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" AWS_DE
   aws --endpoint-url "$S3_ENDPOINT" s3 cp "s3://$BACKUP_BUCKET/$BACKUP_OBJECT" "$archive" --only-show-errors
 AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" AWS_DEFAULT_REGION="$S3_REGION" \
   aws --endpoint-url "$S3_ENDPOINT" s3 cp "s3://$BACKUP_BUCKET/$BACKUP_OBJECT.sha256" "$checksum" --only-show-errors
-sed -i "s|^[^ ]*  .*|$(cut -d' ' -f1 "$checksum")  $archive|" "$checksum"
+expected_hash="$(cut -d' ' -f1 "$checksum")"
+[[ "$expected_hash" =~ ^[a-fA-F0-9]{64}$ ]] || { echo '備份 checksum 格式無效' >&2; exit 1; }
+printf '%s  %s\n' "$expected_hash" "$archive" > "$checksum"
 sha256sum -c "$checksum"
 gzip -t "$archive"
 docker compose --env-file .env.production exec -T mysql sh -c \

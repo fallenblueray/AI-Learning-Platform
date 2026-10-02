@@ -4,7 +4,7 @@ services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
-    env_file: [.env.production]
+    mem_limit: 1g
     environment:
       MYSQL_DATABASE: pt_academy
       MYSQL_USER: pt_app
@@ -13,7 +13,7 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
-      - --innodb-buffer-pool-size=512M
+      - --innodb-buffer-pool-size=256M
       - --max-connections=60
     volumes: [mysql-data:/var/lib/mysql]
     healthcheck:
@@ -28,10 +28,32 @@ services:
       options: { max-size: '10m', max-file: '3' }
 
   api:
+    image: innovate-academy-api:${APP_IMAGE_TAG:-local}
     build: { context: ../.., target: api }
     restart: unless-stopped
-    env_file: [.env.production]
-    environment:
+    mem_limit: 512m
+    environment: &app-environment
+      NODE_ENV: production
+      PORT: 3000
+      APP_URL: ${APP_URL:?Set APP_URL}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
+      DB_SSL: ${DB_SSL:-false}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set ENCRYPTION_KEY}
+      ISSUER_NAME: ${ISSUER_NAME:?Set ISSUER_NAME}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      LIVE_PAYMENTS_ENABLED: ${LIVE_PAYMENTS_ENABLED:-false}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STORAGE_DRIVER: s3
+      S3_ENDPOINT: ${S3_ENDPOINT:?Set S3_ENDPOINT}
+      S3_REGION: ${S3_REGION:?Set S3_REGION}
+      S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?Set S3_SECRET_KEY}
+      S3_CSP_ORIGIN: ${S3_CSP_ORIGIN:?Set S3_CSP_ORIGIN}
+      RESEND_API_KEY: ${RESEND_API_KEY:?Set RESEND_API_KEY}
+      MAIL_FROM: ${MAIL_FROM:?Set MAIL_FROM}
       CERTIFICATE_FONT_PATH: /app/apps/api/assets/NotoSansTC-Regular.otf
     depends_on:
       mysql: { condition: service_healthy }
@@ -45,12 +67,12 @@ services:
     logging: *logging
 
   worker:
+    image: innovate-academy-api:${APP_IMAGE_TAG:-local}
     build: { context: ../.., target: api }
     command: ['node', 'dist/worker.js']
     restart: unless-stopped
-    env_file: [.env.production]
-    environment:
-      CERTIFICATE_FONT_PATH: /app/apps/api/assets/NotoSansTC-Regular.otf
+    mem_limit: 512m
+    environment: *app-environment
     depends_on:
       mysql: { condition: service_healthy }
     networks: [database, application]
@@ -59,6 +81,7 @@ services:
   web:
     build: { context: ../.., target: web }
     restart: unless-stopped
+    mem_limit: 128m
     environment:
       S3_CSP_ORIGIN: ${S3_CSP_ORIGIN:?Set S3_CSP_ORIGIN}
     volumes:
@@ -72,6 +95,7 @@ services:
     image: cloudflare/cloudflared:latest
     command: tunnel --no-autoupdate run
     restart: unless-stopped
+    mem_limit: 128m
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
