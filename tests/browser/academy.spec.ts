@@ -6,8 +6,9 @@ test('home, first workshop and browser back remain usable without an account', a
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('你有想法');
-  await page.getByRole('button', { name: '從第一課開始', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('下班後的想法');
+  await page.getByRole('button', { name: '查看所有課程', exact: true }).click();
+  await page.getByRole('button', { name: '公開練習：分享卡小工具' }).click();
   await expect(page).toHaveURL(/page=first-lesson/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('AI新手不用怕');
   if (firstLessonMedia.video) {
@@ -19,7 +20,9 @@ test('home, first workshop and browser back remain usable without an account', a
     await expect(page.locator('video')).toHaveCount(0);
   }
   await page.goBack();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('你有想法');
+  await expect(page).toHaveURL(/page=catalog/);
+  await page.goBack();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('下班後的想法');
   expect(errors).toEqual([]);
 });
 
@@ -123,7 +126,7 @@ test('workshop steps, copy prompt and self-check work without mutating LMS', asy
 test('mobile navigation, keyboard modal and responsive layouts', async ({ page }) => {
   for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const route of ['home', 'catalog', 'first-lesson', 'learning']) {
+    for (const route of ['home', 'catalog', 'social-course', 'first-lesson', 'learning']) {
       await page.goto(`/?page=${route}`);
       await expect(page.locator('main')).toBeVisible();
       expect(

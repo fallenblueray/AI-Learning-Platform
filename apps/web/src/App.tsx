@@ -25,9 +25,11 @@ import type { Certificate, Course, Enrollment, Level, Order, Pack, User, Wallet 
 import { AuthPanel } from './AuthPanel';
 import { LearningPage } from './LearningPage';
 import { AdminPage } from './AdminPage';
-import { AcademyHome, FirstLessonFeature, FirstLessonPage } from './AcademyPages';
+import { FirstLessonPage } from './AcademyPages';
+import { SocialHome, SocialCoursePage, FeaturedSocialCourse } from './SocialAcademy';
 import { useDialog } from './useDialog';
-type Page = 'home' | 'first-lesson' | 'catalog' | 'learning' | 'wallet' | 'certificates' | 'profile' | 'admin';
+type Page =
+  'home' | 'social-course' | 'first-lesson' | 'catalog' | 'learning' | 'wallet' | 'certificates' | 'profile' | 'admin';
 const nav = [
   { id: 'home' as Page, label: '學苑首頁', icon: Home },
   { id: 'catalog' as Page, label: '探索課程', icon: BookOpen },
@@ -37,7 +39,17 @@ const nav = [
 ];
 export function App() {
   const params = new URLSearchParams(location.search);
-  const validPages = ['home', 'first-lesson', 'catalog', 'learning', 'wallet', 'certificates', 'profile', 'admin'];
+  const validPages = [
+    'home',
+    'social-course',
+    'first-lesson',
+    'catalog',
+    'learning',
+    'wallet',
+    'certificates',
+    'profile',
+    'admin',
+  ];
   const initialPage = params.get('page');
   const [page, setPage] = useState<Page>(validPages.includes(initialPage || '') ? (initialPage as Page) : 'home');
   const [user, setUser] = useState<User | null>(null);
@@ -133,7 +145,17 @@ export function App() {
     const onPop = () => {
       const next = new URLSearchParams(location.search).get('page') || 'home';
       setPage(
-        (['home', 'first-lesson', 'catalog', 'learning', 'wallet', 'certificates', 'profile', 'admin'].includes(next)
+        ([
+          'home',
+          'social-course',
+          'first-lesson',
+          'catalog',
+          'learning',
+          'wallet',
+          'certificates',
+          'profile',
+          'admin',
+        ].includes(next)
           ? next
           : 'home') as Page,
       );
@@ -145,7 +167,7 @@ export function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
   useEffect(() => {
-    document.title = `${page === 'first-lesson' ? '第一個 AI 小工具' : nav.find((n) => n.id === page)?.label || '帳戶管理'} · 創科學苑`;
+    document.title = `${page === 'social-course' ? '社群行銷 × AI 副業實作課' : page === 'first-lesson' ? '第一個 AI 小工具' : nav.find((n) => n.id === page)?.label || '帳戶管理'} · 創科學苑`;
   }, [page]);
   useEffect(() => {
     if (!menu) return;
@@ -197,7 +219,7 @@ export function App() {
       `${c.title}${c.description}`.toLowerCase().includes(search.toLowerCase()),
   );
   return (
-    <div className="app-shell">
+    <div className={`app-shell platform-shell ${page === 'social-course' ? 'course-route' : ''}`}>
       <a className="skip-link" href="#main-content">
         跳至主要內容
       </a>
@@ -214,7 +236,7 @@ export function App() {
             <small>INNOVATE ACADEMY</small>
           </span>
         </a>
-        <div className="workspace-label">從想法，到第一件作品</div>
+        <div className="workspace-label">社群行銷 × AI 副業</div>
         <nav aria-label="主要導覽">
           {nav.map((n) => (
             <button
@@ -265,6 +287,26 @@ export function App() {
       {menu && <button className="menu-backdrop" aria-label="關閉選單" onClick={() => setMenu(false)} />}
       <div className="main-shell">
         <header className="topbar">
+          <a className="platform-brand" href="/?page=home">
+            <span className="brand-mark">
+              <Sparkles size={23} />
+            </span>
+            <span>
+              創科學苑<small>INNOVATE ACADEMY</small>
+            </span>
+          </a>
+          <nav className="desktop-platform-nav" aria-label="網站導覽">
+            {nav.map((n) => (
+              <button
+                key={n.id}
+                className={page === n.id || (n.id === 'catalog' && page === 'social-course') ? 'active' : ''}
+                onClick={() => navigate(n.id)}
+              >
+                {n.label}
+              </button>
+            ))}
+            {user?.role === 'admin' && <button onClick={() => navigate('admin')}>管理後台</button>}
+          </nav>
           <div className="breadcrumb">
             <button
               className="icon-button mobile-menu"
@@ -282,7 +324,8 @@ export function App() {
             <span>學習空間</span>
             <ChevronRight size={14} />
             <strong>
-              {nav.find((n) => n.id === page)?.label || (page === 'first-lesson' ? '第一課實作' : '帳戶管理')}
+              {nav.find((n) => n.id === page)?.label ||
+                (page === 'first-lesson' ? '公開實作練習' : page === 'social-course' ? '社群行銷 × AI' : '帳戶管理')}
             </strong>
           </div>
           <div className="top-actions">
@@ -308,22 +351,22 @@ export function App() {
         </header>
         <main id="main-content" tabIndex={-1}>
           {page === 'home' && (
-            <AcademyHome onStart={() => navigate('first-lesson')} onCatalog={() => navigate('catalog')} />
+            <SocialHome onCourse={() => navigate('social-course')} onCatalog={() => navigate('catalog')} />
           )}
+          {page === 'social-course' && <SocialCoursePage onCatalog={() => navigate('catalog')} />}
           {page === 'first-lesson' && <FirstLessonPage onCatalog={() => navigate('catalog')} />}
           {page === 'catalog' && (
             <>
-              <div className="catalog-intro">
-                <div className="eyebrow">PICK A PROJECT. MAKE IT YOURS.</div>
-                <h1>從想做的事，找到想學的課。</h1>
-                <p>從零開始，把 AI 用在你自己的小工具與想法上。</p>
+              <div className="catalog-intro social-catalog-intro">
+                <div className="social-kicker">FIND YOUR NEXT CHAPTER</div>
+                <h1>學會創作，也學會開拓可能。</h1>
+                <p>從社群內容到工作流程，找到適合自己的下一步。</p>
               </div>
-              {level !== 'advanced' &&
-                level !== 'master' &&
-                tool === 'all' &&
-                (!search || 'AI新手不用怕分享卡小工具'.toLowerCase().includes(search.toLowerCase())) && (
-                  <FirstLessonFeature onStart={() => navigate('first-lesson')} />
-                )}
+              <FeaturedSocialCourse onOpen={() => navigate('social-course')} />
+              <div className="catalog-divider">
+                <h2>已上架與已解鎖課程</h2>
+                <p>以下依你的帳戶權限顯示；新課程規劃尚未開放報名。</p>
+              </div>
               <section className="path-row" aria-label="三個學習級別">
                 {(['beginner', 'advanced', 'master'] as Level[]).map((l, i) => (
                   <button
@@ -337,7 +380,7 @@ export function App() {
                         {levelNames[l]}
                         <small>{levelEnglish[l]}</small>
                       </strong>
-                      <p>{['先做出第一件作品', '把方法用在日常', '驗證需求，探索可能'][i]}</p>
+                      <p>{['建立內容與工具基礎', '整合日常工作流程', '驗證需求，探索可能'][i]}</p>
                     </div>
                     <ArrowUpRight size={17} />
                   </button>
@@ -444,10 +487,16 @@ export function App() {
                   留下每一步成長紀錄
                 </span>
               </div>
-              <p className="cpd-note">完成證書與正式 CPD 學分不同。未獲認可的課程不授予正式 CPD 學分。</p>
+              <div className="legacy-practice-link">
+                <span>想先試試動手做？</span>
+                <button className="text-button" onClick={() => navigate('first-lesson')}>
+                  公開練習：分享卡小工具 <ArrowRight size={16} />
+                </button>
+                <small>獨立練習，不屬於新課程的已交付內容。</small>
+              </div>
             </>
           )}
-          {!['home', 'catalog', 'first-lesson'].includes(page) && !user && !loadingUser ? (
+          {!['home', 'catalog', 'social-course', 'first-lesson'].includes(page) && !user && !loadingUser ? (
             <div className="empty-state">
               <ShieldCheck size={36} />
               <h2>登入，繼續你的學習旅程。</h2>
@@ -569,7 +618,7 @@ export function App() {
         </main>
         <footer className="main-footer">
           <span>創科學苑 · Innovate Academy</span>
-          <span>從好奇出發的 AI 實作學苑 {config.demo_mode && ' · 試行版本'}</span>
+          <span>社群行銷 × AI 副業 · 從實作開始 {config.demo_mode && ' · 試行版本'}</span>
         </footer>
       </div>
       <nav className="mobile-bottom-nav" aria-label="手機快捷導覽">

@@ -1,0 +1,179 @@
+{
+  "capturedAt": "2026-10-03T18:28:31.733Z",
+  "browser": "Chromium",
+  "baseURL": "http://localhost:5173",
+  "captures": [
+    {
+      "name": "home-1440",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "catalog-1440",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "social-course-1440",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "social-course-1440-full",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "fullPage": true,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "curriculum-1440",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "home-768",
+      "viewport": {
+        "width": 768,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "catalog-768",
+      "viewport": {
+        "width": 768,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "social-course-768",
+      "viewport": {
+        "width": 768,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "curriculum-768",
+      "viewport": {
+        "width": 768,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "home-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "catalog-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "social-course-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "social-course-390-full",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "curriculum-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "navigation-mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "home-320",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "catalog-320",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "social-course-320",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    },
+    {
+      "name": "curriculum-320",
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "fullPage": false,
+      "horizontalOverflow": false
+    }
+  ],
+  "errors": []
+}

@@ -10,7 +10,7 @@ test('desktop and mobile course-to-certificate flow', async ({ page }) => {
   await page.getByLabel('電郵地址').fill(email!);
   await page.getByLabel('密碼', { exact: true }).fill(password!);
   await page.getByRole('button', { name: '登入', exact: true }).click();
-  await page.locator('.sidebar').getByRole('button', { name: '探索課程', exact: true }).click();
+  await page.locator('.desktop-platform-nav').getByRole('button', { name: '探索課程', exact: true }).click();
   const course = page
     .locator('.course-card')
     .filter({ hasText: '示範課 · 未公開' })
@@ -30,7 +30,7 @@ test('desktop and mobile course-to-certificate flow', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '恭喜，你已通過課程測驗！' })).toBeVisible();
   await page.getByRole('button', { name: '我的證書', exact: true }).click();
   await expect(page.getByRole('button', { name: '下載 PDF' }).first()).toBeEnabled({ timeout: 30000 });
-  await page.locator('.sidebar').getByRole('button', { name: '探索課程', exact: true }).click();
+  await page.locator('.desktop-platform-nav').getByRole('button', { name: '探索課程', exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('button', { name: '開啟選單' }).click();
@@ -49,7 +49,7 @@ test('reading progress, account settings and test wallet survive the redesign', 
   await page.getByLabel('密碼', { exact: true }).fill(password!);
   await page.getByRole('button', { name: '登入', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.locator('.sidebar').getByRole('button', { name: '我的學習', exact: true }).click();
+  await page.locator('.desktop-platform-nav').getByRole('button', { name: '我的學習', exact: true }).click();
   await page.getByRole('button', { name: '重溫課程' }).first().click();
   await page.getByRole('button', { name: '標記已閱讀' }).click();
   await expect(page.getByRole('status')).toContainText('已記下你的學習進度');
@@ -67,7 +67,7 @@ test('reading progress, account settings and test wallet survive the redesign', 
   await name.fill(originalName);
   await page.getByRole('button', { name: '儲存姓名' }).click();
   await expect(page.getByRole('status')).toContainText('姓名已更新');
-  await page.locator('.sidebar').getByRole('button', { name: '學習點數', exact: true }).click();
+  await page.locator('.desktop-platform-nav').getByRole('button', { name: '學習點數', exact: true }).click();
   await expect(page.getByText('目前為測試付款模式，不會提供正式收費服務。')).toBeVisible();
   for (const button of await page.getByRole('button', { name: '前往安全付款' }).all())
     await expect(button).toBeDisabled();

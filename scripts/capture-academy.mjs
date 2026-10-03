@@ -61,7 +61,7 @@ try {
     await page.getByLabel('密碼', { exact: true }).fill(process.env.E2E_PASSWORD);
     await page.getByRole('button', { name: '登入', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
-    await page.locator('.sidebar').getByRole('button', { name: '探索課程', exact: true }).click();
+    await page.locator('.desktop-platform-nav').getByRole('button', { name: '探索課程', exact: true }).click();
     await page
       .locator('.course-card')
       .filter({ hasText: '示範課 · 未公開' })
