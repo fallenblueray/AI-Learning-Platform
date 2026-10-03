@@ -345,12 +345,12 @@ export function SocialCoursePage({ onCatalog }: { onCatalog: () => void }) {
                 <Clapperboard size={30} />
               </span>
               <div>
-                <span className="planning-badge">首課製作中</span>
+                <span className="planning-badge">第一課可審版已完成</span>
                 <h3>先看一課，再了解這條路。</h3>
                 <p>
-                  從自己的簡短筆記開始：固定要求、比較三份草稿、選擇與修改、製作配圖，再換一份材料重做。粵語影片與繁體中文字幕正在製作。
+                  從自己的簡短筆記開始：固定要求、比較三份草稿、選擇與修改、製作配圖，再換一份材料重做。第一課可審版已完成，整體課程仍在製作；本網站尚未開放播放。
                 </p>
-                <span className="preview-language">粵語配音：製作中 · 普通話版本：尚未提供</span>
+                <span className="preview-language">粵語配音與繁中字幕：可審版完成 · 普通話版本：尚未提供</span>
               </div>
             </div>
           </section>
