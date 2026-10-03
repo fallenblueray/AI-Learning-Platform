@@ -69,6 +69,14 @@ export function App() {
     [activeEnrollment, setActiveEnrollment] = useState<string | null>(null),
     [fetching, setFetching] = useState(true);
   const [catalogError, setCatalogError] = useState('');
+  useEffect(() => {
+    const mobile = window.matchMedia('(max-width: 900px)');
+    const closeDesktopMenu = () => {
+      if (!mobile.matches) setMenu(false);
+    };
+    mobile.addEventListener('change', closeDesktopMenu);
+    return () => mobile.removeEventListener('change', closeDesktopMenu);
+  }, []);
   const menuDialog = useDialog(menu, () => setMenu(false));
   const courseDialog = useDialog(!!selected, () => {
     if (!busy) setSelected(null);
@@ -223,7 +231,17 @@ export function App() {
       <a className="skip-link" href="#main-content">
         跳至主要內容
       </a>
-      <aside ref={menuDialog} tabIndex={-1} id="main-navigation" className={`sidebar ${menu ? 'open' : ''}`}>
+      <aside
+        ref={menuDialog}
+        tabIndex={-1}
+        id="main-navigation"
+        inert={!menu}
+        aria-hidden={!menu}
+        role={menu ? 'dialog' : undefined}
+        aria-modal={menu ? true : undefined}
+        aria-label="網站選單"
+        className={`sidebar ${menu ? 'open' : ''}`}
+      >
         <button className="mobile-nav-close icon-button" aria-label="關閉選單" onClick={() => setMenu(false)}>
           <X size={22} />
         </button>
@@ -285,7 +303,7 @@ export function App() {
         </div>
       </aside>
       {menu && <button className="menu-backdrop" aria-label="關閉選單" onClick={() => setMenu(false)} />}
-      <div className="main-shell">
+      <div className="main-shell" inert={menu} aria-hidden={menu ? true : undefined}>
         <header className="topbar">
           <a className="platform-brand" href="/?page=home">
             <span className="brand-mark">
@@ -359,7 +377,10 @@ export function App() {
             <>
               <div className="catalog-intro social-catalog-intro">
                 <div className="social-kicker">FIND YOUR NEXT CHAPTER</div>
-                <h1>學會創作，也學會開拓可能。</h1>
+                <h1>
+                  <span>從內容創作，</span>
+                  <span>開始學社群行銷。</span>
+                </h1>
                 <p>從社群內容到工作流程，找到適合自己的下一步。</p>
               </div>
               <FeaturedSocialCourse onOpen={() => navigate('social-course')} />
@@ -621,7 +642,7 @@ export function App() {
           <span>社群行銷 × AI 副業 · 從實作開始 {config.demo_mode && ' · 試行版本'}</span>
         </footer>
       </div>
-      <nav className="mobile-bottom-nav" aria-label="手機快捷導覽">
+      <nav className="mobile-bottom-nav" aria-label="手機快捷導覽" inert={menu} aria-hidden={menu ? true : undefined}>
         {nav.slice(0, 3).map((n) => (
           <button
             key={n.id}
@@ -729,7 +750,7 @@ export function App() {
         />
       )}
       {toast && (
-        <div className="toast" role="status">
+        <div className="toast" role="status" inert={menu} aria-hidden={menu ? true : undefined}>
           <span>{toast}</span>
           <button aria-label="關閉通知" onClick={() => setToast('')}>
             <X size={16} />

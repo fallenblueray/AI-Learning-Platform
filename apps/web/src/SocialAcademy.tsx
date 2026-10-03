@@ -77,15 +77,14 @@ export function SocialHome({ onCourse, onCatalog }: { onCourse: () => void; onCa
             <span /> AI FOR YOUR NEXT CHAPTER
           </span>
           <h1>
-            下班後的想法，
-            <br />
-            成為你的
-            <br />
-            <em>下一種可能。</em>
+            <span>用 AI 做好內容，</span>
+            <span>開始你的</span>
+            <em>社群副業。</em>
           </h1>
           <p>
-            從一篇貼文、一張圖、一支短片開始。
-            <br />用 ChatGPT 學社群行銷，逐步探索自己的副業方向。
+            用 ChatGPT 整理帖文、製作配圖與短片，
+            <br />
+            建立可重用的流程，逐步試出自己的副業方向。
           </p>
           <div className="social-actions">
             <button className="button" onClick={onCourse}>
@@ -273,7 +272,6 @@ export function SocialCoursePage({ onCatalog }: { onCatalog: () => void }) {
       <div className="course-intro-grid">
         <div className="course-key-visual">
           <ContentStudio />
-          <span className="visual-status">課程主視覺 · 非影片預覽</span>
         </div>
         <div className="course-heading">
           <span className="social-kicker">CHATGPT × CONTENT × SIDE PROJECTS</span>

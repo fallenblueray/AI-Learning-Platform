@@ -6,7 +6,7 @@ test('home, first workshop and browser back remain usable without an account', a
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('下班後的想法');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('用 AI 做好內容');
   await page.getByRole('button', { name: '查看所有課程', exact: true }).click();
   await page.getByRole('button', { name: '公開練習：分享卡小工具' }).click();
   await expect(page).toHaveURL(/page=first-lesson/);
@@ -22,7 +22,7 @@ test('home, first workshop and browser back remain usable without an account', a
   await page.goBack();
   await expect(page).toHaveURL(/page=catalog/);
   await page.goBack();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('下班後的想法');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('用 AI 做好內容');
   expect(errors).toEqual([]);
 });
 

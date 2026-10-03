@@ -15,12 +15,15 @@ const errors = [],
 page.on('pageerror', (error) => errors.push(error.message));
 async function capture(name, fullPage = false) {
   await page.evaluate(() => document.fonts.ready);
+  if (await page.locator('.toast').isVisible()) throw Error(`Unexpected notification during capture: ${name}`);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   if (overflow) throw Error(`Horizontal overflow: ${name}`);
   await page.screenshot({ path: `${destination}/${name}.jpg`, type: 'jpeg', quality: 85, fullPage });
   captures.push({ name, viewport: page.viewportSize(), fullPage, horizontalOverflow: overflow });
 }
 try {
+  const health = await page.request.get(`${baseURL}/api/v1/config`);
+  if (!health.ok()) throw Error(`Local API unavailable: ${health.status()}`);
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
     for (const route of ['home', 'catalog', 'social-course']) {
@@ -28,6 +31,15 @@ try {
       await page.locator('main h1').waitFor();
       await page.getByText('正在載入課程…').waitFor({ state: 'hidden' });
       await capture(`${route}-${width}`);
+      if (route === 'catalog' && width === 768) {
+        const card = await page.locator('.featured-social').boundingBox();
+        await page.setViewportSize({ width, height: Math.ceil(card.height + card.y) + 200 });
+        await page
+          .locator('.featured-social')
+          .screenshot({ path: `${destination}/featured-card-768.jpg`, type: 'jpeg', quality: 85 });
+        captures.push({ name: 'featured-card-768', viewport: page.viewportSize(), element: '.featured-social' });
+        await page.setViewportSize({ width, height: 844 });
+      }
       if (route === 'social-course' && [1440, 390].includes(width)) await capture(`${route}-${width}-full`, true);
     }
     const action =
@@ -49,6 +61,12 @@ try {
     if (width === 390) {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       await page.getByRole('button', { name: '開啟選單' }).click();
+      await page.waitForFunction(() => {
+        const drawer = document.querySelector('.sidebar');
+        const rect = drawer.getBoundingClientRect();
+        const transform = new DOMMatrixReadOnly(getComputedStyle(drawer).transform);
+        return Math.abs(rect.left) < 0.5 && Math.abs(transform.m41) < 0.5;
+      });
       await capture('navigation-mobile');
     }
   }

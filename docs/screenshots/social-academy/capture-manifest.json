@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-10-03T18:28:31.733Z",
+  "capturedAt": "2026-10-03T18:58:49.661Z",
   "browser": "Chromium",
   "baseURL": "http://localhost:5173",
   "captures": [
@@ -65,6 +65,14 @@
       },
       "fullPage": false,
       "horizontalOverflow": false
+    },
+    {
+      "name": "featured-card-768",
+      "viewport": {
+        "width": 768,
+        "height": 1331
+      },
+      "element": ".featured-social"
     },
     {
       "name": "social-course-768",
