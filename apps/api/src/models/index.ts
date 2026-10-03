@@ -7,6 +7,7 @@ export interface Lesson {
   kind: 'text' | 'video' | 'attachment';
   content: string;
   asset_key?: string;
+  captions?: { id: string; language: string; label: string; asset_key: string; default?: boolean }[];
 }
 export interface Question {
   id: string;

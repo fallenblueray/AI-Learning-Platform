@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import Container from 'typedi';
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { env } from './config/env.config';
 import { sequelize } from './database/connection';
 import { csrf, errors, identify } from './middlewares/http';
@@ -12,8 +13,9 @@ import { authRoutes, courseRoutes, paymentRoutes, adminRoutes } from './routes';
 import { PaymentController } from './controllers/payment.controller';
 import { StorageService } from './services/storage.service';
 import { requireThat } from './exceptions/http.exception';
+import { firstLessonMediaRoutes } from './routes/first-lesson-media';
 import { openapi } from './openapi';
-export function createApp() {
+export function createApp(mediaReview?: Omit<Parameters<typeof firstLessonMediaRoutes>[0], 'production'>) {
   const app = express();
   const assetOrigins = env.S3_CSP_ORIGIN ? [env.S3_CSP_ORIGIN] : [];
   app.disable('x-powered-by');
@@ -76,8 +78,16 @@ export function createApp() {
       res.attachment('certificate.pdf').type('application/pdf').send(pdf);
       return;
     }
-    res.sendFile(file);
+    // The configured storage root may be .local; only the validated basename is served.
+    res.sendFile(path.basename(file), { root: path.dirname(file), dotfiles: 'deny' });
   });
+  app.use(
+    '/api/v1/first-lesson-media',
+    firstLessonMediaRoutes({
+      ...(mediaReview ?? { enabled: env.FIRST_LESSON_PREVIEW_ENABLED, directory: env.FIRST_LESSON_PREVIEW_DIR }),
+      production: env.NODE_ENV === 'production',
+    }),
+  );
   app.use('/api/v1', csrf);
   app.use('/api/v1/auth', authRoutes());
   app.use('/api/v1', courseRoutes(), paymentRoutes());

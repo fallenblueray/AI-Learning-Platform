@@ -62,5 +62,5 @@ export class PackDto {
 }
 export class AssetDto {
   @IsString() @MaxLength(200) name!: string;
-  @IsIn(['video/mp4', 'application/pdf', 'image/png', 'image/jpeg']) content_type!: string;
+  @IsIn(['video/mp4', 'application/pdf', 'image/png', 'image/jpeg', 'text/vtt']) content_type!: string;
 }

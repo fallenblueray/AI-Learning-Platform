@@ -5,7 +5,9 @@ export default defineConfig({
   use: {
     baseURL: process.env.E2E_URL || 'http://localhost:5173',
     headless: true,
-    channel: process.env.E2E_BROWSER || 'chrome',
+    ...(process.env.E2E_EXECUTABLE_PATH
+      ? { launchOptions: { executablePath: process.env.E2E_EXECUTABLE_PATH } }
+      : { channel: process.env.E2E_BROWSER || 'chrome' }),
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },

@@ -1,0 +1,375 @@
+{
+  "checked_at": "2026-10-03T19:31:11.477668+00:00",
+  "base_commit": "134fed54796b8e4315f500dc6eab176203ea8385",
+  "css_sha256": "9019f61041ead09d8f6e68ca69ac8fbc9a9f86dfd9097e752b2f1eca30b47a46",
+  "tool": {
+    "name": "axe-core",
+    "version": "4.13.0",
+    "source": "https://registry.npmjs.org/axe-core",
+    "tags": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+    "dependency_installed_outside_repo": true
+  },
+  "browser": "Chromium via existing Playwright",
+  "excluded_expected_events": [
+    "Guest auth/me and auth/refresh 401 responses",
+    "Navigation cancellation net::ERR_ABORTED"
+  ],
+  "before_findings": [
+    "Serious color-contrast findings in secondary text, search/filter controls, free-course guidance and chapter numbering; examples 2.56:1 for free-course guidance and 3:1 for chapter numbers.",
+    "Console 404 from absent favicon.ico."
+  ],
+  "after": {
+    "states": 22,
+    "automatic_violations": 0,
+    "console_or_page_errors": 0,
+    "unexpected_failed_requests": 0,
+    "playwright_e2e_passed": 22,
+    "playwright_e2e_skipped": 0
+  },
+  "states": [
+    {
+      "width": 390,
+      "route": "home",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 7
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "route": "home",
+      "state": "drawer",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "route": "catalog",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 24,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 8
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "route": "catalog",
+      "state": "drawer",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "route": "social-course",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 25,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "route": "social-course",
+      "state": "expanded-curriculum-faq",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 25,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "route": "social-course",
+      "state": "drawer",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": []
+    },
+    {
+      "width": 768,
+      "route": "home",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 7
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "route": "home",
+      "state": "drawer",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": []
+    },
+    {
+      "width": 768,
+      "route": "catalog",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 24,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "route": "catalog",
+      "state": "drawer",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "route": "social-course",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 24,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "route": "social-course",
+      "state": "expanded-curriculum-faq",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 24,
+      "incomplete": []
+    },
+    {
+      "width": 768,
+      "route": "social-course",
+      "state": "drawer",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": []
+    },
+    {
+      "width": 320,
+      "route": "home",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 8
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "route": "catalog",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 24,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 4
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "route": "social-course",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 25,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 5
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "route": "social-course",
+      "state": "expanded-curriculum-faq",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 25,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 5
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "home",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 21,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 4
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "catalog",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 24,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "social-course",
+      "state": "initial",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 26,
+      "incomplete": []
+    },
+    {
+      "width": 1440,
+      "route": "social-course",
+      "state": "expanded-curriculum-faq",
+      "violations": 0,
+      "runtime_errors": 0,
+      "unexpected_requests": 0,
+      "passed_rules": 26,
+      "incomplete": []
+    }
+  ],
+  "incomplete_color_contrast_targets": [
+    [".art-caption"],
+    [".art-video > span:nth-child(3)"],
+    [".catalog-intro > p"],
+    [".compact > .art-caption"],
+    [".compact > .art-video > span:nth-child(3)"],
+    [".compact > .content-window > .content-window-body > strong"],
+    [".content-window-body > strong"],
+    [".course-anchor-nav > button:nth-child(4)"],
+    [".course-anchor-nav > button:nth-child(5)"],
+    [".course-breadcrumb > span:nth-child(3)"],
+    [".course-heading > .social-kicker"],
+    [".featured-copy > .social-kicker"],
+    [".hero-footnote"],
+    [".mobile-bottom-nav > button:nth-child(1) > span"],
+    [".mobile-bottom-nav > button:nth-child(3) > span"],
+    [".planning-badge"],
+    [".sidebar-note > p"],
+    [".small"],
+    [
+      ".social-hero > .content-studio[role=\"img\"][aria-label=\"原創內容工作室插畫：從想法、貼文到短片的製作流程\"] > .art-caption"
+    ],
+    [
+      ".social-hero > .content-studio[role=\"img\"][aria-label=\"原創內容工作室插畫：從想法、貼文到短片的製作流程\"] > .art-video > span:nth-child(3)"
+    ],
+    [
+      ".social-hero > .content-studio[role=\"img\"][aria-label=\"原創內容工作室插畫：從想法、貼文到短片的製作流程\"] > .content-window > .content-window-body > strong"
+    ],
+    [".social-method > span"],
+    [".social-section-title > .text-button"],
+    [".social-section:nth-child(4) > .social-section-title > div > h2"],
+    ["b:nth-child(3)"],
+    ["b:nth-child(4)"],
+    ["button:nth-child(4) > span"],
+    ["button[aria-current=\"location\"]"],
+    ["h1 > span:nth-child(2)"]
+  ],
+  "manual_review": "Reviewed refreshed 390px home/curriculum/drawer and 768px catalog screenshots. Sticky navigation and horizontally scrollable tabs remain reachable in E2E. Overlapping illustration text is decorative. Automated incomplete findings remain explicitly recorded; no claim of exhaustive manual contrast verification.",
+  "limitations": [
+    "Automated checks are not WCAG certification.",
+    "No physical-device or screen-reader validation.",
+    "No media intake retries or playback activation."
+  ],
+  "tested_change_set": "Contrast and favicon changes on top of base_commit; css_sha256 identifies the tested stylesheet."
+}

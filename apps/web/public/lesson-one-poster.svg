@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#152b46" />
+  <g fill="none" stroke="#26435f">
+    <path
+      d="M0 120h1280M0 240h1280M0 360h1280M0 480h1280M0 600h1280M160 0v720M320 0v720M480 0v720M640 0v720M800 0v720M960 0v720M1120 0v720"
+    />
+    <circle cx="1010" cy="355" r="260" />
+  </g>
+  <g transform="translate(815 130) rotate(12 180 220)">
+    <rect width="350" height="450" rx="12" fill="#c8eddf" />
+    <path d="M175 64v94m-47-47h94m-80-33 66 66m0-66-66 66" stroke="#26735f" stroke-width="10" />
+    <rect x="40" y="220" width="260" height="24" rx="5" fill="#152b46" />
+    <rect x="40" y="263" width="180" height="24" rx="5" fill="#152b46" />
+    <path d="M40 360h260" stroke="#26735f" />
+  </g>
+  <circle cx="90" cy="76" r="7" fill="#c8eddf" />
+  <text x="112" y="82" font-family="sans-serif" font-size="20" fill="#c8eddf" letter-spacing="4">
+    INNOVATE ACADEMY / PROJECT 01
+  </text>
+</svg>

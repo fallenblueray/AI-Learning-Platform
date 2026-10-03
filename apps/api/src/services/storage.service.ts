@@ -20,7 +20,7 @@ export class StorageService {
   }
   localPath(key: string) {
     requireThat(
-      /^(media|certificates)\/[a-zA-Z0-9-]+\.(mp4|pdf|png|jpg)$/.test(key),
+      /^(media|certificates)\/[a-zA-Z0-9-]+\.(mp4|pdf|png|jpg|vtt)$/.test(key),
       400,
       'INVALID_KEY',
       '檔案路徑無效',
@@ -28,6 +28,13 @@ export class StorageService {
     return path.resolve(env.LOCAL_STORAGE_PATH, key);
   }
   async put(key: string, buffer: Buffer, contentType: string) {
+    if (contentType === 'text/vtt')
+      requireThat(
+        buffer.length <= 1024 * 1024 && /^\uFEFF?WEBVTT(?:[ \t].*)?(?:\r?\n|$)/.test(buffer.toString('utf8')),
+        400,
+        'INVALID_VTT',
+        '字幕必須是 1MB 以內的 WebVTT',
+      );
     if (env.STORAGE_DRIVER === 's3')
       await this.client().send(
         new PutObjectCommand({ Bucket: env.S3_BUCKET, Key: key, Body: buffer, ContentType: contentType }),
@@ -54,6 +61,7 @@ export class StorageService {
       'application/pdf': 'pdf',
       'image/png': 'png',
       'image/jpeg': 'jpg',
+      'text/vtt': 'vtt',
     };
     requireThat(extension[contentType], 400, 'INVALID_TYPE', '不支援此檔案類型');
     const key = `media/${randomUUID()}.${extension[contentType]}`;
@@ -79,7 +87,20 @@ export class StorageService {
     const version = (await Version.findByPk(e.get('version_id')))!;
     const lesson = version.get('content').lessons.find((l) => l.id === lessonId);
     requireThat(lesson?.asset_key, 404, 'NOT_FOUND', '此單元沒有檔案');
-    return { url: await this.url(lesson.asset_key) };
+    return {
+      url: await this.url(lesson.asset_key),
+      captions: await Promise.all(
+        (lesson.captions ?? []).map(async ({ asset_key, ...track }) => ({ ...track, url: await this.url(asset_key) })),
+      ),
+    };
+  }
+  async caption(userId: string, enrollmentId: string, lessonId: string, captionId: string) {
+    const e = await ownedEnrollment(userId, enrollmentId);
+    const version = (await Version.findByPk(e.get('version_id')))!;
+    const lesson = version.get('content').lessons.find((l) => l.id === lessonId);
+    const track = lesson?.kind === 'video' ? lesson.captions?.find((t) => t.id === captionId) : undefined;
+    requireThat(track, 404, 'NOT_FOUND', '此版本沒有這條字幕');
+    return { url: await this.url(track.asset_key) };
   }
   async certificate(userId: string, id: string) {
     const c = await Certificate.findByPk(id);

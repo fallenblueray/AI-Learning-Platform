@@ -3,6 +3,7 @@ import {
   ArrowUpRight,
   ArrowRight,
   BookOpen,
+  Home,
   GraduationCap,
   LayoutDashboard,
   LogOut,
@@ -18,16 +19,19 @@ import {
   Check,
   CircleHelp,
   Settings,
-  Leaf,
-  Play,
 } from 'lucide-react';
 import { api, post, levelNames, levelEnglish, date, money } from './api';
 import type { Certificate, Course, Enrollment, Level, Order, Pack, User, Wallet } from './types';
 import { AuthPanel } from './AuthPanel';
 import { LearningPage } from './LearningPage';
 import { AdminPage } from './AdminPage';
-type Page = 'catalog' | 'learning' | 'wallet' | 'certificates' | 'profile' | 'admin';
+import { FirstLessonPage } from './AcademyPages';
+import { SocialHome, SocialCoursePage, FeaturedSocialCourse } from './SocialAcademy';
+import { useDialog } from './useDialog';
+type Page =
+  'home' | 'social-course' | 'first-lesson' | 'catalog' | 'learning' | 'wallet' | 'certificates' | 'profile' | 'admin';
 const nav = [
+  { id: 'home' as Page, label: '學苑首頁', icon: Home },
   { id: 'catalog' as Page, label: '探索課程', icon: BookOpen },
   { id: 'learning' as Page, label: '我的學習', icon: LayoutDashboard },
   { id: 'certificates' as Page, label: '我的證書', icon: Award },
@@ -35,7 +39,19 @@ const nav = [
 ];
 export function App() {
   const params = new URLSearchParams(location.search);
-  const [page, setPage] = useState<Page>((params.get('page') as Page) || 'catalog');
+  const validPages = [
+    'home',
+    'social-course',
+    'first-lesson',
+    'catalog',
+    'learning',
+    'wallet',
+    'certificates',
+    'profile',
+    'admin',
+  ];
+  const initialPage = params.get('page');
+  const [page, setPage] = useState<Page>(validPages.includes(initialPage || '') ? (initialPage as Page) : 'home');
   const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [authOpen, setAuthOpen] = useState(!!params.get('action'));
@@ -52,9 +68,23 @@ export function App() {
     [selected, setSelected] = useState<Course | null>(null),
     [activeEnrollment, setActiveEnrollment] = useState<string | null>(null),
     [fetching, setFetching] = useState(true);
+  const [catalogError, setCatalogError] = useState('');
+  useEffect(() => {
+    const mobile = window.matchMedia('(max-width: 900px)');
+    const closeDesktopMenu = () => {
+      if (!mobile.matches) setMenu(false);
+    };
+    mobile.addEventListener('change', closeDesktopMenu);
+    return () => mobile.removeEventListener('change', closeDesktopMenu);
+  }, []);
+  const menuDialog = useDialog(menu, () => setMenu(false));
+  const courseDialog = useDialog(!!selected, () => {
+    if (!busy) setSelected(null);
+  });
   const [config, setConfig] = useState({ demo_mode: false, test_payments: true });
   const notify = useCallback((message: string) => setToast(message), []);
   const reload = useCallback(async () => {
+    setCatalogError('');
     const list = await api<{ items: Course[] }>('/courses?limit=100');
     setCourses(list.items);
     if (user) {
@@ -81,7 +111,10 @@ export function App() {
     if (!loadingUser) {
       setFetching(true);
       reload()
-        .catch((e) => notify(e.message))
+        .catch((e) => {
+          setCatalogError(e.message);
+          notify(e.message);
+        })
         .finally(() => setFetching(false));
     }
   }, [reload, loadingUser, notify]);
@@ -91,13 +124,67 @@ export function App() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+  const pendingCertificates = certificates.some((c) => !c.revoked_at && !c.pdf_key);
+  useEffect(() => {
+    if (!user || page !== 'certificates' || !pendingCertificates) return;
+    let active = true;
+    const timer = window.setInterval(() => {
+      api<{ items: Certificate[] }>('/certificates')
+        .then((result) => {
+          if (active) setCertificates(result.items);
+        })
+        .catch(() => {
+          /* Keep the pending state; a later poll can recover. */
+        });
+    }, 3000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [user, page, pendingCertificates]);
   function navigate(next: Page) {
     setPage(next);
     setMenu(false);
     setActiveEnrollment(null);
-    history.replaceState({}, '', `?page=${next}`);
+    history.pushState({}, '', `?page=${next}`);
     window.scrollTo(0, 0);
   }
+  useEffect(() => {
+    const onPop = () => {
+      const next = new URLSearchParams(location.search).get('page') || 'home';
+      setPage(
+        ([
+          'home',
+          'social-course',
+          'first-lesson',
+          'catalog',
+          'learning',
+          'wallet',
+          'certificates',
+          'profile',
+          'admin',
+        ].includes(next)
+          ? next
+          : 'home') as Page,
+      );
+      setMenu(false);
+      setActiveEnrollment(null);
+      setSelected(null);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  useEffect(() => {
+    document.title = `${page === 'social-course' ? '社群行銷 × AI 副業實作課' : page === 'first-lesson' ? '第一個 AI 小工具' : nav.find((n) => n.id === page)?.label || '帳戶管理'} · 創科學苑`;
+  }, [page]);
+  useEffect(() => {
+    if (!menu) return;
+    const close = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenu(false);
+    };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [menu]);
   async function unlock(source: 'free' | 'credits') {
     if (!selected) return;
     if (!user) {
@@ -126,7 +213,7 @@ export function App() {
       setWallet(null);
       setEnrollments([]);
       setCertificates([]);
-      navigate('catalog');
+      navigate('home');
       notify('已登出');
     } catch (e) {
       notify((e as Error).message);
@@ -140,21 +227,42 @@ export function App() {
       `${c.title}${c.description}`.toLowerCase().includes(search.toLowerCase()),
   );
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${menu ? 'open' : ''}`}>
+    <div className={`app-shell platform-shell ${page === 'social-course' ? 'course-route' : ''}`}>
+      <a className="skip-link" href="#main-content">
+        跳至主要內容
+      </a>
+      <aside
+        ref={menuDialog}
+        tabIndex={-1}
+        id="main-navigation"
+        inert={!menu}
+        aria-hidden={!menu}
+        role={menu ? 'dialog' : undefined}
+        aria-modal={menu ? true : undefined}
+        aria-label="網站選單"
+        className={`sidebar ${menu ? 'open' : ''}`}
+      >
+        <button className="mobile-nav-close icon-button" aria-label="關閉選單" onClick={() => setMenu(false)}>
+          <X size={22} />
+        </button>
         <a href="/" className="brand">
           <span className="brand-mark">
-            <Leaf size={23} />
+            <Sparkles size={23} />
           </span>
           <span>
             創科學苑
             <small>INNOVATE ACADEMY</small>
           </span>
         </a>
-        <div className="workspace-label">你的專業成長空間</div>
+        <div className="workspace-label">社群行銷 × AI 副業</div>
         <nav aria-label="主要導覽">
           {nav.map((n) => (
-            <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => navigate(n.id)}>
+            <button
+              key={n.id}
+              className={`nav-item ${page === n.id ? 'active' : ''}`}
+              aria-current={page === n.id ? 'page' : undefined}
+              onClick={() => navigate(n.id)}
+            >
               <n.icon size={19} />
               {n.label}
               {n.id === 'learning' && enrollments.length > 0 && (
@@ -173,10 +281,10 @@ export function App() {
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
-            <span className="small-star">✳</span>
+            <Sparkles className="small-star" size={30} />
             <strong>每一步，都算進步。</strong>
             <p>
-              為你的專業，
+              為你的想法，
               <br />
               多打開一種可能。
             </p>
@@ -190,20 +298,53 @@ export function App() {
             <ArrowUpRight size={16} />
           </button>
           <div className="sidebar-footer">
-            為香港醫護而設 <span>香港 · HK</span>
+            給每一個好奇的你 <span>繁體中文</span>
           </div>
         </div>
       </aside>
       {menu && <button className="menu-backdrop" aria-label="關閉選單" onClick={() => setMenu(false)} />}
-      <div className="main-shell">
+      <div className="main-shell" inert={menu} aria-hidden={menu ? true : undefined}>
         <header className="topbar">
+          <a className="platform-brand" href="/?page=home">
+            <span className="brand-mark">
+              <Sparkles size={23} />
+            </span>
+            <span>
+              創科學苑<small>INNOVATE ACADEMY</small>
+            </span>
+          </a>
+          <nav className="desktop-platform-nav" aria-label="網站導覽">
+            {nav.map((n) => (
+              <button
+                key={n.id}
+                className={page === n.id || (n.id === 'catalog' && page === 'social-course') ? 'active' : ''}
+                onClick={() => navigate(n.id)}
+              >
+                {n.label}
+              </button>
+            ))}
+            {user?.role === 'admin' && <button onClick={() => navigate('admin')}>管理後台</button>}
+          </nav>
           <div className="breadcrumb">
-            <button className="icon-button mobile-menu" aria-label="開啟選單" onClick={() => setMenu(!menu)}>
+            <button
+              className="icon-button mobile-menu"
+              aria-label="開啟選單"
+              aria-expanded={menu}
+              aria-controls="main-navigation"
+              onClick={() => setMenu(!menu)}
+            >
               <Menu size={22} />
             </button>
+            <a className="mobile-brand" href="/?page=home" aria-label="創科學苑首頁">
+              <Sparkles size={19} />
+              <span>創科學苑</span>
+            </a>
             <span>學習空間</span>
             <ChevronRight size={14} />
-            <strong>{nav.find((n) => n.id === page)?.label || '帳戶管理'}</strong>
+            <strong>
+              {nav.find((n) => n.id === page)?.label ||
+                (page === 'first-lesson' ? '公開實作練習' : page === 'social-course' ? '社群行銷 × AI' : '帳戶管理')}
+            </strong>
           </div>
           <div className="top-actions">
             <span className="language-label">繁體中文</span>
@@ -226,76 +367,27 @@ export function App() {
             )}
           </div>
         </header>
-        <main>
+        <main id="main-content" tabIndex={-1}>
+          {page === 'home' && (
+            <SocialHome onCourse={() => navigate('social-course')} onCatalog={() => navigate('catalog')} />
+          )}
+          {page === 'social-course' && <SocialCoursePage onCatalog={() => navigate('catalog')} />}
+          {page === 'first-lesson' && <FirstLessonPage onCatalog={() => navigate('catalog')} />}
           {page === 'catalog' && (
             <>
-              <div className="page-heading">
-                <div>
-                  <div className="eyebrow">LEARN TODAY. SHAPE TOMORROW.</div>
-                  <h1>讓 AI，成為你的專業助力。</h1>
-                  <p>從理解到應用，為物理治療師而設的 AI 學習旅程。</p>
-                </div>
-                <span className="audience-tag">
-                  <span />
-                  物理治療師專區
-                </span>
+              <div className="catalog-intro social-catalog-intro">
+                <div className="social-kicker">FIND YOUR NEXT CHAPTER</div>
+                <h1>
+                  <span>從內容創作，</span>
+                  <span>開始學社群行銷。</span>
+                </h1>
+                <p>從社群內容到工作流程，找到適合自己的下一步。</p>
               </div>
-              <section className="hero">
-                <div className="hero-copy">
-                  <span className="hero-kicker">
-                    <span />
-                    以你的步伐，探索 AI
-                  </span>
-                  <h2>
-                    專業的你，
-                    <br />
-                    值得更多可能。
-                  </h2>
-                  <p>
-                    把新工具變成實用技能。
-                    <br />
-                    每個級別，任選一門課程免費開始。
-                  </p>
-                  <button
-                    className="button cream"
-                    onClick={() => document.getElementById('course-list')?.scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    找到你的第一門課
-                    <ArrowUpRight size={18} />
-                  </button>
-                  <div className="hero-caption">
-                    <ShieldCheck size={14} />
-                    靈活自學<span>·</span>測驗合格即獲完成證書
-                  </div>
-                </div>
-                <div className="hero-art" aria-hidden="true">
-                  <div className="orbit orbit-one" />
-                  <div className="orbit orbit-two" />
-                  <div className="art-dot dot-one" />
-                  <div className="art-dot dot-two" />
-                  <div className="art-symbol">✳</div>
-                  <div className="floating-card card-ai">
-                    <span className="mini-icon">
-                      <Sparkles size={18} />
-                    </span>
-                    <div>
-                      AI × 專業實踐<small>讓學習連結日常</small>
-                    </div>
-                  </div>
-                  <div className="floating-card card-growth">
-                    <span className="growth-bars">
-                      <i />
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                    <div>
-                      一步一步，持續進步<small>YOUR NEXT CHAPTER</small>
-                    </div>
-                  </div>
-                  <div className="art-label">CURIOSITY → CAPABILITY</div>
-                </div>
-              </section>
+              <FeaturedSocialCourse onOpen={() => navigate('social-course')} />
+              <div className="catalog-divider">
+                <h2>已上架與已解鎖課程</h2>
+                <p>以下依你的帳戶權限顯示；新課程規劃尚未開放報名。</p>
+              </div>
               <section className="path-row" aria-label="三個學習級別">
                 {(['beginner', 'advanced', 'master'] as Level[]).map((l, i) => (
                   <button
@@ -309,7 +401,7 @@ export function App() {
                         {levelNames[l]}
                         <small>{levelEnglish[l]}</small>
                       </strong>
-                      <p>{['建立基礎，輕鬆開始', '深化技巧，連結工作', '整合應用，拓展思維'][i]}</p>
+                      <p>{['建立內容與工具基礎', '整合日常工作流程', '驗證需求，探索可能'][i]}</p>
                     </div>
                     <ArrowUpRight size={17} />
                   </button>
@@ -319,7 +411,7 @@ export function App() {
                 <div className="section-heading">
                   <div>
                     <h2>
-                      探索你的下一步 <span>{courses.length} 門課程</span>
+                      平台課程 <span>{courses.length} 門可見課程</span>
                     </h2>
                     <p>不必一次學會所有，從你感興趣的開始。</p>
                   </div>
@@ -349,7 +441,23 @@ export function App() {
                     <option value="claude">Claude</option>
                   </select>
                 </div>
-                {fetching ? (
+                {catalogError ? (
+                  <div className="empty-state" role="alert">
+                    <h3>課程暫時未能載入</h3>
+                    <p>{catalogError}</p>
+                    <button
+                      className="button secondary"
+                      onClick={() => {
+                        setFetching(true);
+                        reload()
+                          .catch((e) => setCatalogError(e.message))
+                          .finally(() => setFetching(false));
+                      }}
+                    >
+                      重新載入課程
+                    </button>
+                  </div>
+                ) : fetching ? (
                   <div className="empty-state">正在載入課程…</div>
                 ) : filtered.length ? (
                   <div className="course-grid">
@@ -389,7 +497,7 @@ export function App() {
               <div className="trust-strip">
                 <span>
                   <GraduationCap size={20} />
-                  為醫護工作情境設計
+                  為零程式背景而設
                 </span>
                 <span>
                   <Clock size={19} />
@@ -400,10 +508,16 @@ export function App() {
                   留下每一步成長紀錄
                 </span>
               </div>
-              <p className="cpd-note">完成證書與正式 CPD 學分不同。未獲認可的課程不授予正式 CPD 學分。</p>
+              <div className="legacy-practice-link">
+                <span>想先試試動手做？</span>
+                <button className="text-button" onClick={() => navigate('first-lesson')}>
+                  公開練習：分享卡小工具 <ArrowRight size={16} />
+                </button>
+                <small>獨立練習，不屬於新課程的已交付內容。</small>
+              </div>
             </>
           )}
-          {page !== 'catalog' && !user && !loadingUser ? (
+          {!['home', 'catalog', 'social-course', 'first-lesson'].includes(page) && !user && !loadingUser ? (
             <div className="empty-state">
               <ShieldCheck size={36} />
               <h2>登入，繼續你的學習旅程。</h2>
@@ -525,13 +639,35 @@ export function App() {
         </main>
         <footer className="main-footer">
           <span>創科學苑 · Innovate Academy</span>
-          <span>香港醫護學習平台 {config.demo_mode && ' · 試行版本'}</span>
+          <span>社群行銷 × AI 副業 · 從實作開始 {config.demo_mode && ' · 試行版本'}</span>
         </footer>
       </div>
+      <nav className="mobile-bottom-nav" aria-label="手機快捷導覽" inert={menu} aria-hidden={menu ? true : undefined}>
+        {nav.slice(0, 3).map((n) => (
+          <button
+            key={n.id}
+            className={page === n.id ? 'active' : ''}
+            aria-current={page === n.id ? 'page' : undefined}
+            onClick={() => navigate(n.id)}
+          >
+            <n.icon size={20} />
+            <span>{n.label}</span>
+          </button>
+        ))}
+        <button
+          className={page === 'profile' ? 'active' : ''}
+          onClick={() => (user ? navigate('profile') : setAuthOpen(true))}
+        >
+          <Settings size={20} />
+          <span>{user ? '我的帳戶' : '登入帳戶'}</span>
+        </button>
+      </nav>
       {selected && (
         <div className="modal-backdrop" onClick={() => !busy && setSelected(null)}>
           <section
-            className="modal"
+            ref={courseDialog}
+            tabIndex={-1}
+            className="modal course-detail"
             role="dialog"
             aria-modal="true"
             aria-labelledby="course-dialog-title"
@@ -541,17 +677,53 @@ export function App() {
               <X />
             </button>
             <span className="eyebrow">
-              {levelNames[selected.level]} · {selected.is_demo ? '未公開示範課' : '專業學習'}
+              {levelNames[selected.level]} · {selected.is_demo ? '未公開示範課' : '實作學習'}
             </span>
             <h2 id="course-dialog-title">{selected.title}</h2>
+            <div className={`detail-art ${selected.level}`}>
+              <Sparkles size={42} />
+              <span>LEARN / MAKE / EXPLORE</span>
+              <strong>{selected.subtitle}</strong>
+            </div>
             <p>{selected.description}</p>
+            <div className="detail-facts">
+              <span>
+                <Clock size={18} />
+                {selected.duration_minutes} 分鐘
+              </span>
+              <span>
+                <BookOpen size={18} />
+                {selected.lesson_count} 個單元
+              </span>
+              <span>
+                <Award size={18} />
+                測驗 80 分合格
+              </span>
+            </div>
+            <h3>以自己的步伐，完成這門課</h3>
+            <ol className="detail-steps">
+              <li>解鎖整門課程與教材</li>
+              <li>重溫內容，保留學習進度</li>
+              <li>通過測驗，取得完成紀錄</li>
+            </ol>
             <div className="notice">
               <ShieldCheck size={20} />
               <span>測驗達 80 分即可取得完成證書。不限次重考，不設觀看門檻。此課程不附正式 CPD 學分。</span>
             </div>
-            <p className="muted">免費名額每帳戶每級一次，確認後不能更換課程。</p>
+            <p className="muted">
+              免費名額每帳戶每級一次，可解鎖整門課程，確認後不能更換。
+              {user && enrollments.some((e) => e.course.level === selected.level && e.source === 'free')
+                ? '你已使用此級免費名額。'
+                : ''}
+            </p>
             <div className="modal-actions">
-              <button disabled={busy} className="button" onClick={() => unlock('free')}>
+              <button
+                disabled={
+                  busy || !!(user && enrollments.some((e) => e.course.level === selected.level && e.source === 'free'))
+                }
+                className="button"
+                onClick={() => unlock('free')}
+              >
                 確認使用此級免費名額
                 <ArrowRight size={16} />
               </button>
@@ -578,7 +750,7 @@ export function App() {
         />
       )}
       {toast && (
-        <div className="toast" role="status">
+        <div className="toast" role="status" inert={menu} aria-hidden={menu ? true : undefined}>
           <span>{toast}</span>
           <button aria-label="關閉通知" onClick={() => setToast('')}>
             <X size={16} />
@@ -610,7 +782,6 @@ function CourseCard({ course: c, index, onClick }: { course: Course; index: numb
         <div className="course-tags">
           <span className={`level-badge ${c.level}`}>{levelNames[c.level]}</span>
           <span>{c.is_demo ? '示範課 · 未公開' : '自主學習'}</span>
-          <span>{c.cpd.status === 'pending' ? 'CPD 申請中' : 'CPD 未認可'}</span>
         </div>
         <h3>
           <button onClick={onClick}>{c.title}</button>
@@ -888,7 +1059,7 @@ function VerifyPage({ id }: { id: string }) {
     <div className="verify-shell">
       <a className="brand" href="/">
         <span className="brand-mark">
-          <Leaf />
+          <Sparkles />
         </span>
         創科學苑 <small>Innovate Academy</small>
       </a>

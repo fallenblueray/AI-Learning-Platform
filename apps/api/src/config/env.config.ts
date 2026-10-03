@@ -6,6 +6,8 @@ const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
 export const env = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    FIRST_LESSON_PREVIEW_ENABLED: bool.default(false),
+    FIRST_LESSON_PREVIEW_DIR: z.string().default(''),
     PORT: z.coerce.number().int().default(3000),
     APP_URL: z.url().default('http://localhost:5173'),
     DATABASE_URL: z.string().startsWith('mysql://'),

@@ -1,7 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2, FileText, PlayCircle, Trophy, Award, Download } from 'lucide-react';
 import { api, post, levelNames } from './api';
 import type { Learning } from './types';
+interface CaptionTrack {
+  id: string;
+  language: string;
+  label: string;
+  url: string;
+  default?: boolean;
+}
+interface MediaResponse {
+  url: string;
+  captions?: CaptionTrack[];
+}
 interface Result {
   score: number;
   passed: boolean;
@@ -25,31 +36,140 @@ export function LearningPage({
     [answers, setAnswers] = useState<Record<string, number>>({}),
     [result, setResult] = useState<Result | null>(null),
     [busy, setBusy] = useState(false),
-    [asset, setAsset] = useState(''),
+    [mediaAsset, setMediaAsset] = useState(''),
+    [mediaCaptions, setMediaCaptions] = useState<CaptionTrack[]>([]),
+    [mediaOwner, setMediaOwner] = useState(''),
+    [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null),
+    [captionId, setCaptionId] = useState('off'),
+    [mediaRevision, setMediaRevision] = useState(0),
     [error, setError] = useState('');
   const video = useRef<HTMLVideoElement | null>(null),
-    lastSaved = useRef(0);
-  useEffect(() => {
-    api<Learning>(`/enrollments/${id}`)
-      .then(setData)
-      .catch((e) => setError(e.message));
-  }, [id]);
-  const lesson = data?.content.lessons[lessonIndex];
+    lastSaved = useRef(0),
+    mediaRequest = useRef<AbortController | null>(null),
+    mediaSequence = useRef(0),
+    currentScope = useRef(''),
+    selectedCaption = useRef('off');
+  const attachVideo = useCallback((node: HTMLVideoElement | null) => {
+    video.current = node;
+    setVideoElement(node);
+  }, []);
   useEffect(() => {
     let active = true;
-    setAsset('');
-    if (lesson?.has_asset)
-      api<{ url: string }>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
-        .then((r) => {
-          if (active) setAsset(r.url);
-        })
-        .catch((e) => {
-          if (active) notify(e.message);
-        });
+    setData(null);
+    setError('');
+    setLessonIndex(0);
+    setExam(false);
+    setResult(null);
+    setAnswers({});
+    api<Learning>(`/enrollments/${id}`)
+      .then((value) => {
+        if (active) setData(value);
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
     return () => {
       active = false;
     };
-  }, [id, lesson?.id, lesson?.has_asset, notify]);
+  }, [id]);
+  const lesson = data?.content.lessons[lessonIndex];
+  const scope = lesson ? `${id}:${lesson.id}` : '';
+  useLayoutEffect(() => {
+    currentScope.current = scope;
+    return () => {
+      currentScope.current = '';
+    };
+  }, [scope]);
+  // Never render a previous lesson's source under a new lesson/progress identity.
+  const asset = mediaOwner === scope ? mediaAsset : '';
+  const captions = mediaOwner === scope ? mediaCaptions : [];
+  const loadMedia = useCallback(
+    async (lessonId: string, preserveSelection: boolean) => {
+      const owner = `${id}:${lessonId}`;
+      const sequence = ++mediaSequence.current;
+      mediaRequest.current?.abort();
+      const controller = new AbortController();
+      mediaRequest.current = controller;
+      const isCurrent = () =>
+        !controller.signal.aborted && sequence === mediaSequence.current && currentScope.current === owner;
+      try {
+        const response = await api<MediaResponse>(`/enrollments/${id}/lessons/${lessonId}/asset`, {
+          signal: controller.signal,
+        });
+        if (!isCurrent()) return;
+        setMediaOwner(owner);
+        setMediaAsset(response.url);
+        setMediaCaptions(response.captions ?? []);
+        setCaptionId((selected) =>
+          preserveSelection
+            ? (response.captions?.find((track) => track.id === selected)?.id ?? 'off')
+            : (response.captions?.find((track) => track.default)?.id ?? 'off'),
+        );
+        setMediaRevision((value) => value + 1);
+      } catch (error) {
+        if (isCurrent()) notify((error as Error).message);
+      }
+    },
+    [id, notify],
+  );
+  useEffect(() => {
+    setMediaOwner('');
+    setMediaAsset('');
+    setMediaCaptions([]);
+    setCaptionId('off');
+    lastSaved.current = 0;
+    if (lesson?.has_asset) void loadMedia(lesson.id, false);
+    return () => {
+      ++mediaSequence.current;
+      mediaRequest.current?.abort();
+    };
+  }, [id, lesson?.id, lesson?.has_asset, loadMedia]);
+  useLayoutEffect(() => {
+    selectedCaption.current = captionId;
+    const tracks = videoElement?.textTracks;
+    if (tracks)
+      Array.from(tracks).forEach((track, index) => {
+        track.mode = captions[index]?.id === captionId ? 'showing' : 'disabled';
+      });
+  }, [captionId, mediaCaptions, mediaOwner, scope, videoElement]);
+  useLayoutEffect(() => {
+    const tracks = videoElement?.textTracks;
+    if (!tracks || !videoElement) return;
+    let initializing = videoElement.readyState < 2;
+    const restoreSelection = () => {
+      Array.from(tracks).forEach((track, index) => {
+        const mode = captions[index]?.id === selectedCaption.current ? 'showing' : 'disabled';
+        if (track.mode !== mode) track.mode = mode;
+      });
+    };
+    const ready = () => {
+      restoreSelection();
+      initializing = false;
+    };
+    const sync = () => {
+      if (video.current !== videoElement || !videoElement.isConnected) return;
+      // Browser language preferences can enable extra tracks while a new video initializes.
+      // Preserve the application's selection until that initial load has settled.
+      if (initializing || Array.from(tracks).filter((track) => track.mode === 'showing').length > 1) {
+        restoreSelection();
+        return;
+      }
+      const index = Array.from(tracks).findIndex((track) => track.mode === 'showing');
+      setCaptionId(captions[index]?.id ?? 'off');
+    };
+    restoreSelection();
+    const loading = () => {
+      initializing = true;
+    };
+    videoElement.addEventListener('emptied', loading);
+    videoElement.addEventListener('loadeddata', ready);
+    tracks.addEventListener('change', sync);
+    return () => {
+      videoElement.removeEventListener('emptied', loading);
+      videoElement.removeEventListener('loadeddata', ready);
+      tracks.removeEventListener('change', sync);
+    };
+  }, [mediaCaptions, mediaOwner, scope, videoElement]);
   async function save(read: boolean, position = 0) {
     if (!lesson) return;
     try {
@@ -72,6 +192,7 @@ export function LearningPage({
             }
           : old,
       );
+      if (read) notify('已記下你的學習進度。');
     } catch (e) {
       notify((e as Error).message);
     }
@@ -107,6 +228,12 @@ export function LearningPage({
       <div className="lesson-heading">
         <span className="eyebrow">{levelNames[data.content.level]} · 自主學習</span>
         <h1>{data.content.title}</h1>
+      </div>
+      <div className="lesson-progress-banner">
+        <span>你的學習紀錄</span>
+        <strong>
+          {data.progress.filter((p) => p.read).length} / {data.content.lessons.length} 個單元已閱讀
+        </strong>
       </div>
       <div className="learning-layout">
         <aside className="lesson-nav">
@@ -222,9 +349,12 @@ export function LearningPage({
                 <h2>{lesson.title}</h2>
                 {lesson.kind === 'video' && asset && (
                   <video
-                    key={lesson.id}
-                    ref={video}
+                    key={`${lesson.id}:${mediaRevision}`}
+                    ref={attachVideo}
                     controls
+                    playsInline
+                    preload="metadata"
+                    crossOrigin="anonymous"
                     src={asset}
                     onLoadedMetadata={() => {
                       if (video.current)
@@ -239,18 +369,50 @@ export function LearningPage({
                         void save(false, event.currentTarget.currentTime);
                       }
                     }}
-                  />
+                  >
+                    {captions.map((track) => (
+                      <track
+                        key={track.id}
+                        kind="captions"
+                        src={track.url}
+                        srcLang={track.language}
+                        label={track.label}
+                        onError={() => notify('字幕未能載入，請重新載入教材。')}
+                      />
+                    ))}
+                  </video>
+                )}
+                {lesson.kind === 'video' && captions.length > 0 && (
+                  <label>
+                    字幕
+                    <select
+                      aria-label="選擇字幕"
+                      value={captionId}
+                      onChange={(event) => setCaptionId(event.target.value)}
+                    >
+                      <option value="off">關閉字幕</option>
+                      {captions.map((track) => (
+                        <option key={track.id} value={track.id}>
+                          {track.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {lesson.kind === 'video' && !asset && (
+                  <div className="lesson-unavailable">
+                    <PlayCircle size={38} />
+                    <h3>{lesson.has_asset ? '正在準備影片' : '影片尚未加入'}</h3>
+                    <p>
+                      {lesson.has_asset
+                        ? '若未能載入，可按下方按鈕重新取得教材。'
+                        : '你可先閱讀文字教材；影片就緒後由課程管理員更新。'}
+                    </p>
+                  </div>
                 )}
                 {lesson.kind === 'text' && asset && <img className="lesson-image" src={asset} alt={lesson.title} />}
                 {lesson.has_asset && (
-                  <button
-                    className="text-button"
-                    onClick={() =>
-                      api<{ url: string }>(`/enrollments/${id}/lessons/${lesson.id}/asset`)
-                        .then((r) => setAsset(r.url))
-                        .catch((e) => notify(e.message))
-                    }
-                  >
+                  <button className="text-button" onClick={() => void loadMedia(lesson.id, true)}>
                     重新載入教材
                   </button>
                 )}
@@ -270,7 +432,6 @@ export function LearningPage({
                     className="button secondary"
                     onClick={() => {
                       void save(true, video.current?.currentTime || 0);
-                      notify('已記下你的學習進度。');
                     }}
                   >
                     <CheckCircle2 size={17} />

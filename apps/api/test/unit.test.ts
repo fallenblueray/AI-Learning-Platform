@@ -47,3 +47,28 @@ test('course validation rejects false CPD points, duplicate IDs, and incorrect a
   assert.equal(courseSchema.safeParse({ ...c, questions: [c.questions[0], c.questions[0]] }).success, false);
   assert.equal(courseSchema.safeParse({ ...c, questions: [{ ...c.questions[0], answer: 99 }] }).success, false);
 });
+
+test('caption schema accepts optional versioned VTT and rejects invalid keys, duplicate ids or multiple defaults', () => {
+  const content = demoContent('beginner');
+  content.lessons[0] = {
+    ...content.lessons[0],
+    kind: 'video',
+    asset_key: 'media/example.mp4',
+    captions: [{ id: 'zh', language: 'zh-Hant', label: '繁體中文', asset_key: 'media/caption.vtt', default: true }],
+  };
+  assert.equal(courseSchema.safeParse(content).success, true);
+  for (const bad of ['https://example.test/caption.vtt', 'media/../caption.vtt', 'media/caption.mp4']) {
+    const copy = structuredClone(content);
+    copy.lessons[0].captions![0].asset_key = bad;
+    assert.equal(courseSchema.safeParse(copy).success, false);
+  }
+  const duplicate = structuredClone(content);
+  duplicate.lessons[0].captions!.push({ ...duplicate.lessons[0].captions![0] });
+  assert.equal(courseSchema.safeParse(duplicate).success, false);
+  duplicate.lessons[0].captions![1].id = 'en';
+  assert.equal(courseSchema.safeParse(duplicate).success, false);
+  const text = structuredClone(content);
+  text.lessons[0].kind = 'text';
+  delete text.lessons[0].asset_key;
+  assert.equal(courseSchema.safeParse(text).success, false);
+});

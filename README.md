@@ -1,6 +1,16 @@
-# 創科學苑 / Innovate Academy · 香港醫護 AI 學習平台
+# 創科學苑 / Innovate Academy
 
-供香港物理治療師學習使用 AI 的繁體中文 MVP。React / Vite 前端、Express / TypeScript / Sequelize 後端、MySQL 資料庫；課程影片、圖片、講義及證書使用私有物件儲存。
+面向想用 AI 製作社群內容、整理工作流程及探索副業的上班族。以 ChatGPT 為主線，由自己的筆記、帖文、圖像及短片循序漸進，不保證收入、接案或固定完成時間。繁體中文介面；React / Vite 前端、Express / TypeScript / Sequelize 後端、MySQL 資料庫。
+
+## 2026-10 社群 AI 改版
+
+- 首頁、課程探索、橫向導覽及手機導航全面重設；原創 CSS 內容工作室插畫，不使用參考網站素材。
+- 新課程規劃：`/?page=social-course`。雙欄課程簡介、黏頂章節導覽、桌面資訊卡、手機固定 CTA、可展開的 7 章 28 課、18 項規劃資源及真實 FAQ。
+- **新課程尚未開放報名、定價或交付教材**。章節及資源明確標示規劃；沒有假播放器、評價、學員數或收入數字。HKD 為定價幣別提示，不改寫資料庫價格。
+- 首課主題是自己的筆記 → 固定設定 → 三個 AI 草稿 → 人工選改 → 配圖 → 換材料重做。**新影片、粵語配音與繁中字幕的可審版已由父端完成，但網站端尚未取得可讀素材，未開放播放**；普通話版本僅為未來規劃。舊影片未接入。
+- 原分享卡仍可從探索課程底部進入 `/?page=first-lesson`，是獨立公開練習，不是新課程已交付的首課；保留三色 1080 PNG、五步教材及自我檢查。
+- 既有 LMS、MFA、點數、每帳戶每級一次整門課免費名額、不可變課程版本、私有字幕授權、測驗及證書保留。未改後端、收費規則或權限。
+- 本輪驗收與媒體待辦見 [社群 AI 改版紀錄](docs/social-academy-redesign.md)。沒有部署、合併或啟用正式付款。
 
 ## 已實作
 
@@ -12,7 +22,7 @@
 - 課程草稿／不可變發布版本、題庫、MP4／PNG／JPEG／PDF 上載、點數套裝及營運後台。
 - 持久化背景工作、失敗重試、稽核紀錄、版本化 SQL migrations、Docker、CI、DigitalOcean Terraform 設定及備份／還原腳本。
 
-**這不是已上線收費服務。** 正式雲端帳戶、域名、商戶及郵件憑證尚未提供，因此外部服務尚未實際啟用。三門示範課是未公開、不可出售的測試教材；正式課程、售價、條款及 CPD 認可須由營運方提供。
+**這不是已驗收的正式收費服務。** 三門舊示範課是未公開、不可出售的測試教材。正式課程、售價及條款須由營運方確認；完成證書不代表正式 CPD 認證。既有部署設定保留，本次改版只在隔離本機環境驗證，不代表外部服務已驗收。
 
 ## 本機開始
 
@@ -82,6 +92,8 @@ E2E_EMAIL=learner@example.org E2E_PASSWORD='<密碼>' npm run test:e2e
 
 預設使用已安裝的 Chrome；亦可 `npx playwright install chromium` 後調整設定使用 Playwright Chromium。瀏覽器測試只改動該測試學員的免費名額、進度及證書。
 
+若使用已安裝的 Chromium，可設定 `E2E_EXECUTABLE_PATH=/usr/bin/chromium`。新增公開首課測試不需帳戶；原 LMS 與帳戶測試需要隔離受邀學員，並會暫時修改再還原其姓名。真實瀏覽器截圖可用相同環境變數執行 `node scripts/capture-academy.mjs`，輸出至 Git 忽略的 `.local/qa/`。請勿提供正式環境帳戶。
+
 ## 介面與文件
 
 - OpenAPI：`GET /api/v1/openapi.json`。
@@ -91,9 +103,12 @@ E2E_EMAIL=learner@example.org E2E_PASSWORD='<密碼>' npm run test:e2e
 - [騰訊 Lighthouse、Cloudflare Tunnel、COS 與同機 MySQL 部署](docs/tencent-lighthouse-deployment.md)
 - [本次驗收紀錄及未完成的外部驗收](docs/verification.md)
 - [下一階段：雲端試行環境](docs/next-step.md)
+- [創科學苑改版、首課媒體接入與本次驗收](docs/academy-redesign.md)
 
 ## 首版邊界
 
-平台不接駁 AI 模型 API，不核驗 PT 執業資格，不提供正式課程內容或自動 CPD 申報。CPD 資料保留獨立欄位；首版後台僅可設定「未認可／申請中」，證書不授予正式學分。認可後須按核准要求另行實作及驗收，不會追溯改寫舊證書。
+平台不接駁 AI 模型 API；首課提示由學員自行貼到選用的 AI 工具，不傳送分享卡輸入到伺服器。既有 CPD 欄位保留供相容性使用，後台僅可設定「未認可／申請中」，證書不授予正式學分。本次定位以一般 AI 實作為主，不核驗專業資格或自動申報 CPD。
 
 沒有機構帳戶、訂閱制、雙語介面或自動部分退款。單機 API 是試行配置，不承諾高可用。證書、電郵、Stripe 與雲端營運的真實服務驗收均須於正式上線前完成。
+
+字幕接入：影片單元可在課程草稿加入多語 WebVTT，隨發布版本保存；學員依原報讀版本取得五分鐘授權字幕，播放器支援選軌／關閉。私人首課審核維持關閉，正式素材未在本環境驗收。詳見 [版本字幕與權限決策](docs/media/versioned-captions.md)。

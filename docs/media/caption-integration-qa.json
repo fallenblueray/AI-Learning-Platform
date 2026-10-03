@@ -1,0 +1,53 @@
+{
+  "lms": {
+    "fixtureOnly": true,
+    "realLocalApi": true,
+    "views": [
+      {
+        "width": 1440,
+        "play": true,
+        "zh": true,
+        "en": true,
+        "off": true,
+        "refreshPreservesSelection": true,
+        "overflow": false
+      },
+      {
+        "width": 390,
+        "play": true,
+        "zh": true,
+        "en": true,
+        "off": true,
+        "refreshPreservesSelection": true,
+        "overflow": false
+      },
+      {
+        "width": 320,
+        "play": true,
+        "zh": true,
+        "en": true,
+        "off": true,
+        "refreshPreservesSelection": true,
+        "overflow": false
+      }
+    ],
+    "errors": []
+  },
+  "admin": {
+    "realLogin": true,
+    "realMfa": true,
+    "realLocalVttUpload": true,
+    "editableLabel": true,
+    "language": "zh-Hant",
+    "defaultTrack": true,
+    "removeDraftTrack": true,
+    "published": false,
+    "errors": []
+  },
+  "checks": {
+    "unit": 7,
+    "integration": 18,
+    "e2e": 11,
+    "formalMediaAvailable": false
+  }
+}

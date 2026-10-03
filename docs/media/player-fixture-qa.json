@@ -1,0 +1,43 @@
+{
+  "fixtureOnly": true,
+  "formalFilesAvailable": false,
+  "views": [
+    {
+      "width": 1440,
+      "duration": 3,
+      "paused": true,
+      "currentTime": 1.5,
+      "captionLanguage": "zh-Hant",
+      "cues": 1,
+      "activeCue": "播放器測試字幕，並非正式教材。",
+      "playsInline": true,
+      "controls": true,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "duration": 3,
+      "paused": true,
+      "currentTime": 1.5,
+      "captionLanguage": "zh-Hant",
+      "cues": 1,
+      "activeCue": "播放器測試字幕，並非正式教材。",
+      "playsInline": true,
+      "controls": true,
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "duration": 3,
+      "paused": true,
+      "currentTime": 1.5,
+      "captionLanguage": "zh-Hant",
+      "cues": 1,
+      "activeCue": "播放器測試字幕，並非正式教材。",
+      "playsInline": true,
+      "controls": true,
+      "overflow": false
+    }
+  ],
+  "disabledFallback": true
+}

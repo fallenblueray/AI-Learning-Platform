@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ArrowRight, Leaf, X } from 'lucide-react';
+import { ArrowRight, Sparkles, X } from 'lucide-react';
 import { post } from './api';
 import type { User } from './types';
+import { useDialog } from './useDialog';
 export function AuthPanel({ onClose, onLogin }: { onClose: () => void; onLogin: (u: User) => void }) {
+  const dialog = useDialog(true, onClose);
   const query = new URLSearchParams(location.search);
   const action = query.get('action');
   const [mode, setMode] = useState(action === 'verify' ? 'verify' : action === 'reset' ? 'reset' : 'login'),
@@ -53,12 +55,19 @@ export function AuthPanel({ onClose, onLogin }: { onClose: () => void; onLogin: 
   };
   return (
     <div className="modal-backdrop">
-      <section className="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <section
+        ref={dialog}
+        tabIndex={-1}
+        className="modal auth-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-title"
+      >
         <button className="close-button" aria-label="關閉" onClick={onClose}>
           <X />
         </button>
         <span className="brand-mark">
-          <Leaf />
+          <Sparkles />
         </span>
         <h2 id="auth-title">{titles[mode]}</h2>
         <p>一個帳戶，收藏你的每一步學習。</p>
