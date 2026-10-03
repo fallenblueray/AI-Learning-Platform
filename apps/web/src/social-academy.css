@@ -1677,3 +1677,64 @@
 .featured-copy h2 {
   text-wrap: balance;
 }
+
+/* Contrast fixes from the final Chromium/axe audit: public course navigation and content. */
+.platform-shell .social-kicker,
+.platform-shell .hero-footnote,
+.platform-shell .social-method > span,
+.platform-shell .journey-grid small,
+.platform-shell .workspace-label,
+.platform-shell .sidebar-footer,
+.platform-shell .sidebar-footer > span,
+.platform-shell .path-item p,
+.platform-shell .path-item strong small,
+.platform-shell .catalog-section .section-heading h2 > span,
+.platform-shell .catalog-section .section-heading p,
+.platform-shell .catalog-section .tabs button:not(.active),
+.platform-shell .course-footer small,
+.platform-shell .trust-strip,
+.platform-shell .legacy-practice-link small,
+.platform-shell .course-breadcrumb,
+.platform-shell .chapter-number,
+.platform-shell .chapter li > span:first-child,
+.platform-shell .course-enrollment-card dt,
+.platform-shell .art-kicker,
+.platform-shell .art-caption {
+  color: #53634f;
+}
+.platform-shell .social-editorial > .social-kicker {
+  color: #b0c8bc;
+}
+.platform-shell .catalog-section input::placeholder {
+  color: #53634f;
+  opacity: 1;
+}
+.platform-shell .path-number.advanced,
+.platform-shell .path-number.master,
+.platform-shell .level-badge.advanced {
+  color: #5e502e;
+}
+.platform-shell .course-cover .cover-label,
+.platform-shell .course-cover .cover-bottom {
+  color: #172f3f;
+  opacity: 1;
+}
+.platform-shell .lesson-preview p {
+  color: #46545e;
+}
+.platform-shell .course-cover .cover-bottom > span {
+  opacity: 1;
+}
+.platform-shell .trust-strip > span {
+  color: #53634f;
+}
+.platform-shell .catalog-section input {
+  color: #172f3f;
+}
+.platform-shell .path-item p {
+  font-size: 12px;
+  white-space: normal;
+}
+.platform-shell .course-footer small {
+  font-size: 12px;
+}

@@ -14,6 +14,9 @@ test('planned course navigation, chapters and FAQ work without enrollment or pay
   await expect(page).toHaveURL(/page=social-course/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('社群行銷 × AI 副業實作課');
   await expect(page.locator('video')).toHaveCount(0);
+  await expect(page.locator('.lesson-preview .planning-badge')).toHaveText('第一課可審版已完成');
+  await expect(page.locator('.lesson-preview')).toContainText('本網站尚未開放播放');
+  await expect(page.locator('.course-enrollment-card .button')).toHaveText(['查看完整課程規劃', '查看首課製作狀態']);
   await expect(page.locator('.course-enrollment-card')).toContainText('尚未開放報名');
   await expect(page.locator('.course-enrollment-card')).toContainText('港幣 HKD');
   await expect(page.locator('.chapter')).toHaveCount(7);
@@ -204,6 +207,53 @@ test('phone headings keep meaningful phrases together', async ({ page }) => {
         return [...rows.values()];
       });
       for (const line of lines) expect(line.length, `${route} ${width}: ${line}`).toBeGreaterThan(1);
+    }
+  }
+});
+
+test('public navigation and course guidance retain readable text contrast', async ({ page }) => {
+  for (const width of [390, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ['home', 'catalog']) {
+      await page.goto('/?page=' + route);
+      await page.getByText('正在載入課程…').waitFor({ state: 'hidden' });
+      const samples = await page
+        .locator(
+          '.social-kicker, .hero-footnote, .social-method > span, .journey-grid small, .path-item p, .path-number, .catalog-section input, .catalog-section .tabs button, .course-footer small, .trust-strip > span',
+        )
+        .evaluateAll((elements) =>
+          elements
+            .filter((e) => e.getClientRects().length)
+            .map((e) => {
+              let node = e,
+                background = '';
+              while (node) {
+                const color = getComputedStyle(node).backgroundColor;
+                if (color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent') {
+                  background = color;
+                  break;
+                }
+                node = node.parentElement!;
+              }
+              return { foreground: getComputedStyle(e).color, background, text: e.textContent?.slice(0, 60) };
+            }),
+        );
+      const luminance = (color: string) =>
+        color
+          .match(/[\d.]+/g)!
+          .slice(0, 3)
+          .map(Number)
+          .map((v) => v / 255)
+          .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+          .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+      expect(samples.length).toBeGreaterThan(0);
+      for (const sample of samples) {
+        const a = luminance(sample.foreground),
+          b = luminance(sample.background);
+        expect((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), `${route}: ${sample.text}`).toBeGreaterThanOrEqual(
+          4.5,
+        );
+      }
     }
   }
 });

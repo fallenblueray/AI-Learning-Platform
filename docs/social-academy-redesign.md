@@ -73,3 +73,15 @@
 ## 新首課可審版交付
 
 2026-10-03 父端確認新影片與字幕可審版完成；網站僅更新此製作狀態，未啟用播放或發布教材。版本、大小及失敗紀錄見 [私有導入紀錄](media/social-lesson-intake.md)。
+
+## 最後一輪品質檢查
+
+使用既有 Playwright／Chromium，加上從官方 npm 安裝至 `/tmp` 的 axe-core 4.13.0（沒有改 package.json 或 lockfile）。涵蓋首頁、catalog、social-course 在 320／390／768／1440px 的初始畫面、展開課綱／FAQ，以及 390／768px 抽屜，共 22 個狀態。
+
+先重現嚴重文字對比不足：例如免費名額提示 2.56:1、章節編號 3:1；另發現 favicon.ico 404。修正僅限字色、必要文字大小與原創 favicon，不改資料／權限／交易規則。
+
+修正後 22 個稽核狀態：0 自動違規、0 console／page error、0 非預期失敗請求。訪客 auth/me／refresh 的預期 401 與正常導航取消分開處理。完整 Playwright 22／22 通過；再次確認第一課可審版未開放播放，未定價的 CTA 只查看課綱或製作狀態，沒有報名／付款寫入。
+
+部分重疊插畫、固定導覽與橫向捲動頁籤仍被 axe 列為 contrast incomplete，需人工判斷；已複核主要畫面與操作，但不宣稱所有 incomplete 都已人工驗證，也不構成 WCAG 認證或真機／螢幕閱讀器驗收。詳見 [結構化 QA 證據](public-quality-qa.json)。
+
+重跑自動稽核時，從官方 npm 在專案外安裝 axe-core 4.13.0，設定 `AXE_SOURCE` 指向該套件的 `axe.min.js`，執行 `node scripts/audit-public-accessibility.mjs`。報告寫入 Git 忽略的 `.local/qa/public-accessibility.json`；不需新增任何服務或帳戶。
